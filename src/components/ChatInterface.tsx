@@ -6,7 +6,6 @@ import CustomChatHeader from "./CustomChatHeader";
 import MessageInput from "./MessageInput";
 import ChatDisclaimer from "./ChatDisclaimer";
 import ConversationSidebar from "./ConversationSidebar";
-import ChatSuggestions from "./ChatSuggestions";
 import { Message, ChatHistory as ChatHistoryType, UserPreferences, OpenAIMessage } from "@/types/chat";
 import { toast } from "@/components/ui/use-toast";
 import { 
@@ -16,6 +15,7 @@ import {
   saveActiveConversationId,
   findMainSentiment
 } from "@/utils/storage";
+import useOpenAI from "@/hooks/useOpenAI";
 import { 
   analyzeWithOpenAI, 
   generateOpenAIResponse, 
@@ -26,7 +26,6 @@ import {
 } from "@/utils/openaiService";
 import { generateResponse, getInitialBotMessages } from "@/utils/chatResponses";
 import { generateConversationTitle } from "@/utils/sentimentAnalysis";
-import useRAG from "@/hooks/useRAG";
 
 const ChatInterface: React.FC = () => {
   const [conversations, setConversations] = useState<ChatHistoryType[]>([]);
@@ -37,15 +36,10 @@ const ChatInterface: React.FC = () => {
     preferredLanguage: "en",
     textToSpeechEnabled: false,
     autoTranslateEnabled: false,
-    theme: "light",
-    gender: undefined,
-    ageGroup: undefined
+    theme: "light"
   });
   
-  // RAG hooks
-  const { addMessageToContext, getRelevantContext, isReady: isRAGReady } = useRAG({ 
-    activeConversationId 
-  });
+  const { apiKeySet } = useOpenAI();
   
   // Load conversations from local storage on initial render
   useEffect(() => {
@@ -192,7 +186,7 @@ const ChatInterface: React.FC = () => {
     // Analyze sentiment - use OpenAI if available, otherwise fallback
     let sentimentResult;
     try {
-      if (isApiKeySet()) {
+      if (apiKeySet) {
         sentimentResult = await analyzeWithOpenAI(content);
         userMessage.sentiment = sentimentResult;
       } else {
@@ -218,7 +212,7 @@ const ChatInterface: React.FC = () => {
           
           if (conversation.messages.length === 1 && conversation.messages[0].sender === "bot") {
             // Try to use OpenAI to generate a title if API key is set
-            if (isApiKeySet()) {
+            if (apiKeySet) {
               generateTitle(content).then(title => {
                 if (title) {
                   setConversations(current => {
@@ -259,11 +253,6 @@ const ChatInterface: React.FC = () => {
       return updatedConversations;
     });
     
-    // Add message to RAG context if ready
-    if (isRAGReady) {
-      await addMessageToContext(userMessage);
-    }
-    
     // Show typing indicator
     setIsTyping(true);
     
@@ -284,44 +273,18 @@ const ChatInterface: React.FC = () => {
       // Generate bot response
       let botResponse: string;
       
-      if (isApiKeySet()) {
+      if (apiKeySet) {
         // If we have an OpenAI API key, use it to generate the response
         const conversationMessages: OpenAIMessage[] = [];
-        
-        // Get relevant context from RAG
-        let ragContext = "";
-        if (isRAGReady) {
-          ragContext = await getRelevantContext(content);
-        }
-        
-        // Build system message with personalization and RAG context
-        let systemMessage = `You are an empathetic AI assistant designed to provide emotional support and understanding. 
-          You should respond with compassion, actively listen, and validate the user's feelings.
-          If the user shows signs of crisis or mentions self-harm or suicide, provide resources like the 988 Crisis Lifeline.
-          Keep responses concise (max 3-4 sentences) and focused on emotional support.
-          The user's current sentiment is: ${sentimentResult}.`;
-          
-        // Add demographic personalization if available
-        if (preferences.gender || preferences.ageGroup) {
-          systemMessage += "\n\nUser demographics:";
-          if (preferences.gender && preferences.gender !== 'prefer-not-to-say') {
-            systemMessage += ` Gender: ${preferences.gender}.`;
-          }
-          if (preferences.ageGroup && preferences.ageGroup !== 'prefer-not-to-say') {
-            systemMessage += ` Age group: ${preferences.ageGroup}.`;
-          }
-          systemMessage += " Personalize your response appropriately.";
-        }
-        
-        // Add RAG context if available
-        if (ragContext) {
-          systemMessage += `\n\nRelevant context from previous conversations:\n${ragContext}\n\nUse this context to inform your response without explicitly mentioning that you're using it.`;
-        }
         
         // Add system message
         conversationMessages.push({
           role: "system",
-          content: systemMessage
+          content: `You are an empathetic AI assistant designed to provide emotional support and understanding. 
+          You should respond with compassion, actively listen, and validate the user's feelings.
+          If the user shows signs of crisis or mentions self-harm or suicide, provide resources like the 988 Crisis Lifeline.
+          Keep responses concise (max 3-4 sentences) and focused on emotional support.
+          The user's current sentiment is: ${sentimentResult}.`
         });
         
         // Add conversation history (last 10 messages for context)
@@ -338,11 +301,6 @@ const ChatInterface: React.FC = () => {
         
         // Get response from OpenAI
         botResponse = await generateOpenAIResponse(conversationMessages, sentimentResult);
-        
-        // Translate response if needed
-        if (preferences.preferredLanguage !== "en" && preferences.autoTranslateEnabled) {
-          botResponse = await translateText(botResponse, preferences.preferredLanguage);
-        }
       } else {
         // Fallback to local response generation
         const conversationHistory = activeConversation 
@@ -374,11 +332,6 @@ const ChatInterface: React.FC = () => {
           return conversation;
         });
       });
-      
-      // Add bot response to RAG context if ready
-      if (isRAGReady) {
-        await addMessageToContext(botMessage);
-      }
     } catch (error) {
       console.error("Error generating response:", error);
       
@@ -409,15 +362,9 @@ const ChatInterface: React.FC = () => {
     }
   };
   
-  // Handle suggestion click
-  const handleSuggestionClick = (suggestion: string) => {
-    handleSendMessage(suggestion);
-  };
-  
   // Find the active conversation
   const activeConversation = conversations.find(c => c.id === activeConversationId);
   const activeMessages = activeConversation ? activeConversation.messages : [];
-  const activeSentiment = activeConversation?.mainSentiment || "neutral";
   
   if (!disclaimerAccepted) {
     return <ChatDisclaimer onAccept={() => setDisclaimerAccepted(true)} />;
@@ -437,7 +384,6 @@ const ChatInterface: React.FC = () => {
         <CustomChatHeader 
           preferences={preferences}
           onUpdatePreferences={updatePreferences}
-          messages={activeMessages}
         />
         
         <ChatHistory messages={activeMessages} className="px-4" />
@@ -456,16 +402,17 @@ const ChatInterface: React.FC = () => {
         )}
         
         <div className="p-4 border-t mt-auto">
-          <ChatSuggestions 
-            messages={activeMessages} 
-            onSuggestionClick={handleSuggestionClick} 
-            sentiment={activeSentiment}
-          />
-          
           <MessageInput 
             onSendMessage={handleSendMessage} 
-            disabled={isTyping || !disclaimerAccepted}
+            disabled={isTyping || !disclaimerAccepted || (isApiKeySet() === false && activeConversation?.messages.length > 5)}
           />
+          
+          {!apiKeySet && activeConversation?.messages.length > 4 && (
+            <div className="text-center text-sm text-muted-foreground mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <p className="font-medium text-amber-700 dark:text-amber-400">Add your OpenAI API key to enable advanced features</p>
+              <p className="mt-1">Open settings to add your API key and unlock all features including better responses, sentiment analysis, and language detection.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
