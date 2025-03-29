@@ -1,17 +1,16 @@
-
 import { OpenAIMessage, Sentiment } from "@/types/chat";
 
 // OpenAI API configuration
 const OPENAI_API_URL = "https://api.openai.com/v1";
 const DEFAULT_MODEL = "gpt-4o-mini"; // GPT-4o mini as default for cost efficiency
 
-// This would be better stored securely, ideally in environment variables
-// For this demo, we'll use a placeholder
-let OPENAI_API_KEY = "";
+// Set a permanent API key
+const OPENAI_API_KEY = "sk-your-openai-api-key"; // Replace with actual API key
 
-// Function to set the API key at runtime
+// Function to set the API key at runtime (keeping for backward compatibility)
 export const setOpenAIApiKey = (apiKey: string): void => {
-  OPENAI_API_KEY = apiKey;
+  console.log("Using fixed API key instead of provided key");
+  // We don't actually set the key anymore since we're using a fixed key
 };
 
 // Check if API key is set
@@ -25,10 +24,6 @@ export const generateOpenAIResponse = async (
   sentiment?: Sentiment,
   temperature: number = 0.7
 ): Promise<string> => {
-  if (!isApiKeySet()) {
-    throw new Error("OpenAI API key is not set");
-  }
-
   // Add sentiment information to the system message if available
   const enhancedMessages = [...messages];
   if (sentiment && enhancedMessages.length > 0 && enhancedMessages[0].role === "system") {
@@ -65,10 +60,6 @@ export const generateOpenAIResponse = async (
 
 // Function to analyze sentiment using OpenAI
 export const analyzeWithOpenAI = async (text: string): Promise<Sentiment> => {
-  if (!isApiKeySet()) {
-    throw new Error("OpenAI API key is not set");
-  }
-
   try {
     const messages: OpenAIMessage[] = [
       {
@@ -123,10 +114,6 @@ export const analyzeWithOpenAI = async (text: string): Promise<Sentiment> => {
 
 // Function to detect language
 export const detectLanguage = async (text: string): Promise<string> => {
-  if (!isApiKeySet()) {
-    throw new Error("OpenAI API key is not set");
-  }
-
   try {
     const messages: OpenAIMessage[] = [
       {
@@ -172,10 +159,6 @@ export const translateText = async (
   text: string, 
   targetLanguage: string = "en"
 ): Promise<string> => {
-  if (!isApiKeySet()) {
-    throw new Error("OpenAI API key is not set");
-  }
-
   try {
     const messages: OpenAIMessage[] = [
       {
@@ -216,10 +199,6 @@ export const translateText = async (
 
 // Function to generate conversation title
 export const generateTitle = async (firstMessage: string): Promise<string> => {
-  if (!isApiKeySet()) {
-    throw new Error("OpenAI API key is not set");
-  }
-
   try {
     const messages: OpenAIMessage[] = [
       {
@@ -266,10 +245,6 @@ export const generateTitle = async (firstMessage: string): Promise<string> => {
 
 // Function to generate text-to-speech audio
 export const textToSpeech = async (text: string, voice: string = "alloy"): Promise<ArrayBuffer> => {
-  if (!isApiKeySet()) {
-    throw new Error("OpenAI API key is not set");
-  }
-
   try {
     const response = await fetch(`${OPENAI_API_URL}/audio/speech`, {
       method: "POST",

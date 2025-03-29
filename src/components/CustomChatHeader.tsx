@@ -1,27 +1,41 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Settings, Info } from "lucide-react";
+import { Settings, Info, User } from "lucide-react";
 import ChatSettings from './ChatSettings';
 import ApiKeyModal from './ApiKeyModal';
-import { UserPreferences } from '@/types/chat';
+import HappinessMeter from './HappinessMeter';
+import { UserPreferences, HappinessRecord, UserProfile } from '@/types/chat';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import UserProfileForm from './UserProfileForm';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface CustomChatHeaderProps {
   preferences: UserPreferences;
   onUpdatePreferences: (preferences: Partial<UserPreferences>) => void;
+  happinessRecords: HappinessRecord[];
+  userProfile?: UserProfile;
+  onUpdateUserProfile: (profile: UserProfile) => void;
 }
 
 const CustomChatHeader: React.FC<CustomChatHeaderProps> = ({
   preferences,
-  onUpdatePreferences
+  onUpdatePreferences,
+  happinessRecords,
+  userProfile,
+  onUpdateUserProfile
 }) => {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   return (
     <div className="p-4 border-b flex items-center justify-between">
@@ -48,6 +62,27 @@ const CustomChatHeader: React.FC<CustomChatHeaderProps> = ({
       </div>
       
       <div className="flex items-center space-x-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="hidden sm:flex">
+              Mood Tracker
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <HappinessMeter records={happinessRecords} />
+          </PopoverContent>
+        </Popover>
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="rounded-full"
+          onClick={() => setIsProfileModalOpen(true)}
+        >
+          <User className="h-5 w-5" />
+          <span className="sr-only">User Profile</span>
+        </Button>
+        
         <ChatSettings 
           preferences={preferences}
           onUpdatePreferences={onUpdatePreferences}
@@ -58,6 +93,13 @@ const CustomChatHeader: React.FC<CustomChatHeaderProps> = ({
       <ApiKeyModal 
         isOpen={isApiKeyModalOpen}
         onClose={() => setIsApiKeyModalOpen(false)}
+      />
+      
+      <UserProfileForm
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        onSave={onUpdateUserProfile}
+        initialProfile={userProfile}
       />
     </div>
   );

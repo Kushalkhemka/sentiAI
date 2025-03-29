@@ -25,6 +25,20 @@ export interface Message {
   translatedFrom?: string; // Source language if translated
 }
 
+export interface UserProfile {
+  gender?: "male" | "female" | "non-binary" | "prefer-not-to-say" | string;
+  age?: number;
+  name?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface HappinessRecord {
+  date: string; // YYYY-MM-DD format
+  averageSentiment: number; // -1 to 1 value representing average happiness
+  sentimentCounts: Record<Sentiment, number>; // Count of each sentiment type
+}
+
 export interface ChatHistory {
   id: string;
   title: string;
@@ -90,4 +104,22 @@ export interface UserPreferences {
   textToSpeechEnabled: boolean;
   autoTranslateEnabled: boolean;
   theme: "light" | "dark" | "system";
+}
+
+// ChromaDB types
+export interface VectorDBEntry {
+  id: string;
+  content: string;
+  embedding: number[];
+  metadata: {
+    messageId: string;
+    conversationId: string;
+    timestamp: Date;
+    sentiment: Sentiment;
+  };
+}
+
+export interface ChatSuggestion {
+  text: string;
+  type: "question" | "tip" | "exercise";
 }
