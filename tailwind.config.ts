@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,25 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom soothing colors
+				soothing: {
+					blue: {
+						light: '#6FB1FC',
+						DEFAULT: '#4A90E2',
+						dark: '#3A7BC8'
+					},
+					green: {
+						light: '#A5D6A7',
+						DEFAULT: '#5FC57B',
+						dark: '#4BA564'
+					},
+					neutral: {
+						lightest: '#F8FAFC',
+						light: '#EDF2F7',
+						DEFAULT: '#CBD5E0',
+						dark: '#718096'
+					}
 				}
 			},
 			borderRadius: {
@@ -84,11 +104,25 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-slow': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.5' }
+				},
+				'fade-in': {
+					'0%': { opacity: '0' },
+					'100%': { opacity: '1' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-slow': 'pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				'fade-in': 'fade-in 0.5s ease-out'
+			},
+			backgroundImage: {
+				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+				'soothing-gradient': 'linear-gradient(to right, #4A90E2, #5FC57B)'
 			}
 		}
 	},
