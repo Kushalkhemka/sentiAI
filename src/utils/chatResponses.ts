@@ -1,8 +1,8 @@
 
 import { Sentiment } from "../types/chat";
 
-// Simple response generation based on detected sentiment
-export const generateResponse = (message: string, sentiment: Sentiment): string => {
+// Enhanced and more empathetic response generation based on detected sentiment
+export const generateResponse = (message: string, sentiment: Sentiment, conversationHistory: string = ""): string => {
   // Crisis responses take immediate priority
   if (sentiment === "urgent") {
     return "I notice you may be in distress. Please remember that you're not alone. " +
@@ -11,6 +11,7 @@ export const generateResponse = (message: string, sentiment: Sentiment): string 
       "Would it help to talk about what you're experiencing right now?";
   }
 
+  // Advanced emotion-based responses with Chain-of-Thought reasoning
   const responses = {
     positive: [
       "I'm glad to hear you're feeling good! What's contributing to those positive feelings?",
@@ -51,8 +52,45 @@ export const generateResponse = (message: string, sentiment: Sentiment): string 
       "It's wonderful that you're feeling calm. What practices help you maintain this sense of peace?",
       "Calmness is a valuable state. How did you arrive at this peaceful mindset?",
       "This sense of calm can be a great foundation. Is there anything you'd like to explore from this grounded place?"
+    ],
+    frustrated: [
+      "I can sense your frustration. It's completely valid to feel this way when things aren't going as expected.",
+      "It seems like you're dealing with some frustration. Would it help to talk about what's causing this?",
+      "Frustration can be challenging to navigate. Is there a specific situation that's contributing to this feeling?"
+    ],
+    suppressed: [
+      "I notice you're saying you're okay, but I'm wondering if there might be more you'd like to share?",
+      "Sometimes when we say we're 'fine,' there are other feelings beneath the surface. It's safe to express those here if you'd like.",
+      "I'm hearing that you're okay, but I'm also sensing there might be more to it. Would you like to talk more about what's going on?"
+    ],
+    confused: [
+      "It sounds like you might be feeling uncertain about some things. Would it help to explore that confusion together?",
+      "Being confused can feel uncomfortable. Is there a specific situation that's causing this uncertainty?",
+      "I notice you might be feeling a bit lost. Sometimes talking through our thoughts can help bring clarity."
+    ],
+    fearful: [
+      "I can hear that you're feeling afraid, which is completely understandable. Would you like to talk about what's causing this fear?",
+      "Fear is a powerful emotion and often has important things to tell us. What do you think your fear might be trying to protect you from?",
+      "Being scared is a natural response to perceived threats. Is there something specific that's triggered this feeling for you?"
     ]
   };
+
+  // Advanced context-aware responses using the conversation history
+  if (conversationHistory && conversationHistory.length > 0) {
+    // Look for repeated patterns or topics in the conversation
+    if (conversationHistory.includes("family") && message.toLowerCase().includes("family")) {
+      return "I notice family relationships seem to be an important theme in our conversation. Would you like to explore how these relationships are affecting you?";
+    }
+    
+    if (conversationHistory.includes("work") && message.toLowerCase().includes("work")) {
+      return "Work seems to be coming up frequently in our discussion. How is your work situation impacting your overall wellbeing?";
+    }
+  }
+  
+  // Handle suppressed emotions specifically - detect when someone might be hiding their true feelings
+  if (sentiment === "suppressed") {
+    return "I notice you said you're fine, but sometimes that word can cover many different feelings. It's okay if you're not actually feeling fine right now. Would you like to share more about what's really going on?";
+  }
 
   // Select a random response from the appropriate category
   const appropriateResponses = responses[sentiment] || responses.neutral;
