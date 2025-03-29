@@ -20,6 +20,9 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
     error: null
   });
 
+  // Define proper type for SpeechRecognition
+  type SpeechRecognition = any;
+  
   // Check if browser supports speech recognition
   const browserSupportsSpeechRecognition = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
 
@@ -37,8 +40,8 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
       return;
     }
 
-    // Create speech recognition instance
-    const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+    // Create speech recognition instance with proper type handling
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     const recognition = new SpeechRecognition();
     
     recognition.continuous = true;

@@ -2,11 +2,17 @@
 import React, { useState, FormEvent, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Mic } from "lucide-react";
+import { Send, Mic, Globe } from "lucide-react";
 import VoiceInput from "./VoiceInput";
+import LanguageSelector from "./LanguageSelector";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface MessageInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, language?: string) => void;
   disabled?: boolean;
 }
 
@@ -15,6 +21,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   disabled = false 
 }) => {
   const [message, setMessage] = useState("");
+  const [language, setLanguage] = useState("en");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = (e: FormEvent) => {
@@ -22,7 +29,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     
     if (message.trim() === "") return;
     
-    onSendMessage(message);
+    onSendMessage(message, language);
     setMessage("");
   };
 
@@ -69,15 +76,39 @@ const MessageInput: React.FC<MessageInputProps> = ({
           disabled={disabled}
         />
         
-        <Button 
-          type="submit" 
-          size="icon" 
-          className="rounded-full h-[60px] w-[60px] bg-primary hover:bg-primary/90"
-          disabled={disabled || message.trim() === ""}
-        >
-          <Send className="h-5 w-5" />
-          <span className="sr-only">Send message</span>
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="rounded-full h-[30px] w-[30px]"
+                disabled={disabled}
+              >
+                <Globe className="h-4 w-4" />
+                <span className="sr-only">Select language</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-2">
+              <LanguageSelector
+                selectedLanguage={language}
+                onSelectLanguage={setLanguage}
+                disabled={disabled}
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <Button 
+            type="submit" 
+            size="icon" 
+            className="rounded-full h-[60px] w-[60px] bg-primary hover:bg-primary/90"
+            disabled={disabled || message.trim() === ""}
+          >
+            <Send className="h-5 w-5" />
+            <span className="sr-only">Send message</span>
+          </Button>
+        </div>
       </div>
       
       <div className="text-xs text-center mt-2 text-muted-foreground">

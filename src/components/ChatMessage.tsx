@@ -3,17 +3,20 @@ import React from "react";
 import { Message } from "../types/chat";
 import { getSentimentColor } from "../utils/sentimentAnalysis";
 import { cn } from "@/lib/utils";
+import TextToSpeech from "./TextToSpeech";
 
 interface ChatMessageProps {
   message: Message;
   showSentiment?: boolean;
+  showTextToSpeech?: boolean;
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ 
   message, 
-  showSentiment = true 
+  showSentiment = true,
+  showTextToSpeech = true
 }) => {
-  const { content, sender, sentiment, timestamp } = message;
+  const { content, sender, sentiment, timestamp, language } = message;
   const isUser = sender === "user";
   
   const formattedTime = new Intl.DateTimeFormat('en-US', {
@@ -39,20 +42,30 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           {isUser && sentiment && showSentiment && (
             <div className="flex justify-end mt-2">
               <span className={cn(
-                "sentiment-tag",
+                "text-xs px-2 py-1 rounded-full font-medium",
                 getSentimentColor(sentiment)
               )}>
                 {sentiment}
               </span>
             </div>
           )}
+          
+          {/* Show language indicator if available */}
+          {language && language !== 'en' && (
+            <div className="text-xs text-muted-foreground mt-1">
+              Detected language: {language}
+            </div>
+          )}
         </div>
         
         <div className={cn(
-          "text-xs text-muted-foreground mt-1",
-          isUser ? "text-right" : "text-left"
+          "flex items-center text-xs text-muted-foreground mt-1",
+          isUser ? "justify-end" : "justify-start"
         )}>
-          {formattedTime}
+          {!isUser && showTextToSpeech && (
+            <TextToSpeech text={content} />
+          )}
+          <span>{formattedTime}</span>
         </div>
       </div>
     </div>
