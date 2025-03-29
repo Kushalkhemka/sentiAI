@@ -25,6 +25,7 @@ import {
   isApiKeySet
 } from "@/utils/openaiService";
 import { generateResponse, getInitialBotMessages } from "@/utils/chatResponses";
+import { generateConversationTitle } from "@/utils/sentimentAnalysis";
 
 const ChatInterface: React.FC = () => {
   const [conversations, setConversations] = useState<ChatHistoryType[]>([]);
@@ -226,7 +227,6 @@ const ChatInterface: React.FC = () => {
               }).catch(err => console.error("Error generating title:", err));
             } else {
               // Fallback to local title generation
-              const { generateConversationTitle } = require("@/utils/sentimentAnalysis");
               updatedTitle = generateConversationTitle(content);
             }
             
