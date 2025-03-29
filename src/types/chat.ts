@@ -90,4 +90,33 @@ export interface UserPreferences {
   textToSpeechEnabled: boolean;
   autoTranslateEnabled: boolean;
   theme: "light" | "dark" | "system";
+  gender?: "male" | "female" | "non-binary" | "prefer-not-to-say";
+  ageGroup?: "under-18" | "18-24" | "25-34" | "35-44" | "45-54" | "55+" | "prefer-not-to-say";
+}
+
+// Daily mood tracking data
+export interface MoodEntry {
+  date: string; // ISO date string
+  sentiment: Sentiment;
+  confidence: number;
+}
+
+// Happiness meter data
+export interface HappinessData {
+  dailyMoods: MoodEntry[];
+  weeklyAverage: number; // 0-100 scale
+  trend: "improving" | "declining" | "stable";
+}
+
+// Vector database interface
+export interface VectorDBEntry {
+  id: string;
+  content: string;
+  embedding: number[];
+  metadata: {
+    messageId: string;
+    conversationId: string;
+    timestamp: Date;
+    sentiment?: Sentiment;
+  };
 }
