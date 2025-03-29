@@ -39,7 +39,7 @@ export const initVectorDB = async (): Promise<void> => {
 
     embeddingFunction = new OpenAIEmbeddingFunction({
       openai_api_key: "your-openai-api-key-here", // Replace with actual key
-      openai_model: "text-embedding-3-small" // Use the property expected by the library
+      model_name: "text-embedding-3-small"
     });
 
     // Create or get collection
@@ -75,7 +75,7 @@ export const addMessageToVectorDB = async (
           messageId: message.id,
           conversationId,
           timestamp: message.timestamp,
-          sentiment: message.sentiment || "neutral"
+          sentiment: message.sentiment
         }
       };
 
@@ -111,9 +111,7 @@ export const findSimilarMessages = async (
     if (isBrowser) {
       // Simple keyword matching as fallback in browser
       const keywords = query.toLowerCase().split(' ');
-      
-      // Ensure type safety with proper casting
-      const results: VectorDBEntry[] = memoryVectorStore
+      const results = memoryVectorStore
         .filter(entry => {
           const content = entry.content.toLowerCase();
           return keywords.some(keyword => content.includes(keyword));
@@ -136,7 +134,7 @@ export const findSimilarMessages = async (
         nResults: limit
       });
 
-      // Map results to our format with proper type casting
+      // Map results to our format
       if (results.documents && results.documents[0] && results.metadatas && results.metadatas[0]) {
         return results.documents[0].map((doc, i) => {
           const metadata = results.metadatas![0][i];
@@ -145,10 +143,10 @@ export const findSimilarMessages = async (
             content: doc,
             embedding: [], // We don't need the actual embedding
             metadata: {
-              messageId: String(metadata.messageId),
-              conversationId: String(metadata.conversationId),
-              timestamp: new Date(String(metadata.timestamp)),
-              sentiment: metadata.sentiment ? String(metadata.sentiment) : "neutral"
+              messageId: metadata.messageId,
+              conversationId: metadata.conversationId,
+              timestamp: new Date(metadata.timestamp),
+              sentiment: metadata.sentiment
             }
           };
         });
