@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX } from 'lucide-react';
-import { textToSpeech } from '@/utils/openaiService';
+import { textToSpeech } from '@/utils/openai';
 import { toast } from '@/components/ui/use-toast';
 
 interface TextToSpeechProps {

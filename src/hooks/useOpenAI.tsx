@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { isApiKeySet } from '@/utils/openaiService';
+import { isApiKeySet } from '@/utils/openai';
 import { toast } from '@/components/ui/use-toast';
 
 export const useOpenAI = () => {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import ChatHistory from "./ChatHistory";
@@ -32,7 +33,7 @@ import {
   translateText, 
   generateTitle,
   isApiKeySet
-} from "@/utils/openaiService";
+} from "@/utils/openai";
 import { generateResponse, getInitialBotMessages } from "@/utils/chatResponses";
 import { generateConversationTitle } from "@/utils/sentimentAnalysis";
 import { 
