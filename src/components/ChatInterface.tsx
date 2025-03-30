@@ -13,7 +13,8 @@ import {
   OpenAIMessage, 
   UserProfile,
   ChatSuggestion,
-  HappinessRecord
+  HappinessRecord,
+  SimilarMessage
 } from "@/types/chat";
 import { toast } from "@/components/ui/use-toast";
 import { 
@@ -63,7 +64,6 @@ const ChatInterface: React.FC = () => {
   
   const { apiKeySet } = useOpenAI();
   
-  // Initialize VectorDB
   useEffect(() => {
     if (disclaimerAccepted && !vectorDBInitialized) {
       initVectorDB().then(success => {
@@ -75,47 +75,37 @@ const ChatInterface: React.FC = () => {
     }
   }, [disclaimerAccepted, vectorDBInitialized]);
   
-  // Load conversations from local storage on initial render
   useEffect(() => {
     if (disclaimerAccepted) {
       const storedConversations = loadConversations();
       setConversations(storedConversations);
       
-      // Load active conversation ID
       const storedActiveId = loadActiveConversationId();
       
       if (storedActiveId && storedConversations.some(c => c.id === storedActiveId)) {
         setActiveConversationId(storedActiveId);
       } else if (storedConversations.length > 0) {
-        // Set the most recent conversation as active
         setActiveConversationId(storedConversations[0].id);
       } else {
-        // Create a new conversation if none exist
         createNewConversation();
       }
       
-      // Load user preferences
       const storedPreferences = localStorage.getItem('user_preferences');
       if (storedPreferences) {
         setPreferences(JSON.parse(storedPreferences));
       }
       
-      // Load user profile
       const storedProfile = localStorage.getItem('user_profile');
       if (storedProfile) {
         const parsedProfile = JSON.parse(storedProfile);
-        // Convert string dates back to Date objects
         parsedProfile.createdAt = new Date(parsedProfile.createdAt);
         parsedProfile.updatedAt = new Date(parsedProfile.updatedAt);
         setUserProfile(parsedProfile);
       } else {
-        // Check if we should prompt for user profile
         const profilePrompted = localStorage.getItem('profile_prompted');
         if (!profilePrompted) {
-          // Set a timeout to show the profile form after a short delay
           setTimeout(() => {
             localStorage.setItem('profile_prompted', 'true');
-            // Create a default profile that will be shown in the form
             setUserProfile({
               createdAt: new Date(),
               updatedAt: new Date()
@@ -124,48 +114,40 @@ const ChatInterface: React.FC = () => {
         }
       }
       
-      // Store existing conversations in VectorDB
       if (storedConversations.length > 0 && vectorDBInitialized) {
         storedConversations.forEach(conversation => {
           storeConversationHistoryInVectorDB(conversation);
         });
       }
       
-      // Calculate happiness records
       const records = calculateHappinessRecords(storedConversations);
       setHappinessRecords(records);
     }
   }, [disclaimerAccepted, vectorDBInitialized]);
   
-  // Save conversations to local storage whenever they change
   useEffect(() => {
     if (conversations.length > 0) {
       saveConversations(conversations);
       
-      // Update happiness records
       const records = calculateHappinessRecords(conversations);
       setHappinessRecords(records);
     }
   }, [conversations]);
   
-  // Save active conversation ID whenever it changes
   useEffect(() => {
     if (activeConversationId) {
       saveActiveConversationId(activeConversationId);
     }
   }, [activeConversationId]);
   
-  // Save user preferences whenever they change
   useEffect(() => {
     localStorage.setItem('user_preferences', JSON.stringify(preferences));
     
-    // Apply theme
     if (preferences.theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else if (preferences.theme === 'light') {
       document.documentElement.classList.remove('dark');
     } else {
-      // System preference
       if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         document.documentElement.classList.add('dark');
       } else {
@@ -174,14 +156,12 @@ const ChatInterface: React.FC = () => {
     }
   }, [preferences]);
   
-  // Save user profile whenever it changes
   useEffect(() => {
     if (userProfile) {
       localStorage.setItem('user_profile', JSON.stringify(userProfile));
     }
   }, [userProfile]);
   
-  // Generate chat suggestions when active conversation changes
   useEffect(() => {
     if (activeConversationId) {
       const activeConversation = conversations.find(c => c.id === activeConversationId);
@@ -191,7 +171,6 @@ const ChatInterface: React.FC = () => {
           setChatSuggestions(suggestions);
         });
     } else {
-      // Default suggestions for new conversation
       generateSuggestions(null, conversations, userProfile)
         .then(suggestions => {
           setChatSuggestions(suggestions);
@@ -223,7 +202,6 @@ const ChatInterface: React.FC = () => {
     setConversations(prev => [newConversation, ...prev]);
     setActiveConversationId(newConversationId);
     
-    // Generate new suggestions for the empty conversation
     generateSuggestions(null, conversations, userProfile)
       .then(suggestions => {
         setChatSuggestions(suggestions);
@@ -237,7 +215,6 @@ const ChatInterface: React.FC = () => {
   const handleDeleteConversation = (conversationId: string) => {
     setConversations(prev => prev.filter(c => c.id !== conversationId));
     
-    // If the deleted conversation was active, set a new active conversation
     if (activeConversationId === conversationId) {
       const remainingConversations = conversations.filter(c => c.id !== conversationId);
       
@@ -250,16 +227,38 @@ const ChatInterface: React.FC = () => {
   };
   
   const updatePreferences = (newPrefs: Partial<UserPreferences>) => {
-    setPreferences(prev => ({
-      ...prev,
-      ...newPrefs
-    }));
+    setPreferences(prev => {
+      const updatedPreferences = {
+        ...prev,
+        ...newPrefs
+      };
+      
+      localStorage.setItem('user_preferences', JSON.stringify(updatedPreferences));
+      
+      if (updatedPreferences.theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else if (updatedPreferences.theme === 'light') {
+        document.documentElement.classList.remove('dark');
+      } else {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+      
+      return updatedPreferences;
+    });
+    
+    toast({
+      title: "Preferences Updated",
+      description: "Your preferences have been saved",
+    });
   };
   
   const updateUserProfile = (profile: UserProfile) => {
     setUserProfile(profile);
     
-    // Show confirmation toast
     toast({
       title: "Profile Updated",
       description: "Your profile information has been saved",
@@ -267,13 +266,11 @@ const ChatInterface: React.FC = () => {
   };
 
   const handleSendMessage = async (content: string, language?: string) => {
-    // If no active conversation, create one
     if (!activeConversationId) {
       createNewConversation();
       return;
     }
     
-    // Create user message
     const userMessage: Message = {
       id: uuidv4(),
       content,
@@ -281,18 +278,18 @@ const ChatInterface: React.FC = () => {
       timestamp: new Date(),
     };
     
-    // Detect language if not provided
     try {
       const detectedLanguage = language || await detectLanguage(content);
       userMessage.language = detectedLanguage;
       
-      // Note: We no longer auto-translate, instead we always keep the original 
-      // language and translate dynamically when displaying if needed
+      if (userMessage.language) {
+        userMessage.language = userMessage.language || preferences.preferredLanguage || "en";
+      }
     } catch (error) {
       console.error("Error detecting language:", error);
+      userMessage.language = preferences.preferredLanguage || "en";
     }
     
-    // Analyze sentiment - always use OpenAI
     try {
       const sentimentResult = await analyzeWithOpenAI(content);
       userMessage.sentiment = sentimentResult;
@@ -302,16 +299,13 @@ const ChatInterface: React.FC = () => {
       userMessage.sentiment = analyzeSentiment(content).sentiment;
     }
     
-    // Update the conversation
     setConversations(prev => {
       const updatedConversations = prev.map(conversation => {
         if (conversation.id === activeConversationId) {
-          // If this is the first user message, set the conversation title
           let updatedTitle = conversation.title;
           let updatedLanguage = conversation.language;
           
           if (conversation.messages.length === 1 && conversation.messages[0].sender === "bot") {
-            // Try to use OpenAI to generate a title
             generateTitle(content).then(title => {
               if (title) {
                 setConversations(current => {
@@ -348,10 +342,8 @@ const ChatInterface: React.FC = () => {
       return updatedConversations;
     });
     
-    // Show typing indicator
     setIsTyping(true);
     
-    // If sentiment is urgent, show toast with crisis resources
     if (userMessage.sentiment === "urgent") {
       toast({
         title: "Crisis Resources",
@@ -361,19 +353,15 @@ const ChatInterface: React.FC = () => {
       });
     }
     
-    // Get conversation history for context-aware responses
     const activeConversation = conversations.find(c => c.id === activeConversationId);
     
-    // Store the message in VectorDB for future reference
     if (vectorDBInitialized && activeConversationId) {
       storeMessageInVectorDB(userMessage, activeConversationId);
     }
     
     try {
-      // Generate bot response
       let botResponse: string;
       
-      // Get similar messages for context
       let contextMessages: SimilarMessage[] = [];
       if (vectorDBInitialized) {
         try {
@@ -383,16 +371,13 @@ const ChatInterface: React.FC = () => {
         }
       }
       
-      // Always use OpenAI for response generation
       const conversationMessages: OpenAIMessage[] = [];
       
-      // Add system message with personalization
       let systemPrompt = `You are an empathetic AI assistant designed to provide emotional support and understanding. 
       You should respond with compassion, actively listen, and validate the user's feelings.
       If the user shows signs of crisis or mentions self-harm or suicide, provide resources like the 988 Crisis Lifeline.
       Keep responses concise (max 3-4 sentences) and focused on emotional support.`;
       
-      // Add user profile information for personalization
       if (userProfile) {
         systemPrompt += `\nThe user has provided the following profile information:`;
         if (userProfile.name) systemPrompt += `\n- Name: ${userProfile.name}`;
@@ -401,10 +386,8 @@ const ChatInterface: React.FC = () => {
         systemPrompt += `\nTailor your response appropriately to this demographic information.`;
       }
       
-      // Add sentiment info
       systemPrompt += `\nThe user's current sentiment is: ${userMessage.sentiment}.`;
       
-      // Add similar past messages for context
       if (contextMessages.length > 0) {
         systemPrompt += `\n\nHere are some similar messages the user has sent in the past that may provide context:`;
         contextMessages.forEach(msg => {
@@ -412,7 +395,6 @@ const ChatInterface: React.FC = () => {
         });
       }
       
-      // Add current language preference
       systemPrompt += `\n\nRespond in the following language: ${preferences.preferredLanguage}`;
       
       conversationMessages.push({
@@ -420,7 +402,6 @@ const ChatInterface: React.FC = () => {
         content: systemPrompt
       });
       
-      // Add conversation history (last 10 messages for context)
       if (activeConversation) {
         const lastMessages = activeConversation.messages.slice(-10);
         
@@ -432,10 +413,14 @@ const ChatInterface: React.FC = () => {
         }
       }
       
-      // Get response from OpenAI
-      botResponse = await generateOpenAIResponse(conversationMessages, userMessage.sentiment);
+      try {
+        botResponse = await generateOpenAIResponse(conversationMessages, userMessage.sentiment);
+      } catch (error) {
+        console.error("OpenAI API error:", error);
+        const { generateResponse } = await import("@/utils/chatResponses");
+        botResponse = generateResponse(content, userMessage.sentiment);
+      }
       
-      // Create bot message
       const botMessage: Message = {
         id: uuidv4(),
         content: botResponse,
@@ -444,7 +429,6 @@ const ChatInterface: React.FC = () => {
         language: preferences.preferredLanguage
       };
       
-      // Add bot message to conversation
       setConversations(prev => {
         return prev.map(conversation => {
           if (conversation.id === activeConversationId) {
@@ -458,7 +442,6 @@ const ChatInterface: React.FC = () => {
         });
       });
       
-      // Generate new suggestions based on the updated conversation
       const updatedConversation = {
         ...activeConversation!,
         messages: [...activeConversation!.messages, userMessage, botMessage]
@@ -472,13 +455,12 @@ const ChatInterface: React.FC = () => {
     } catch (error) {
       console.error("Error generating response:", error);
       
-      // Fallback response in case of API error
       const fallbackMessage: Message = {
         id: uuidv4(),
-        content: "I'm sorry, I encountered an issue while processing your message. Could you try again?",
+        content: "I'm here to listen. What's on your mind today?",
         sender: "bot",
         timestamp: new Date(),
-        language: "en"
+        language: preferences.preferredLanguage || "en"
       };
       
       setConversations(prev => {
@@ -494,7 +476,6 @@ const ChatInterface: React.FC = () => {
         });
       });
     } finally {
-      // Hide typing indicator
       setIsTyping(false);
     }
   };
@@ -503,7 +484,6 @@ const ChatInterface: React.FC = () => {
     handleSendMessage(suggestion);
   };
   
-  // Find the active conversation
   const activeConversation = conversations.find(c => c.id === activeConversationId);
   const activeMessages = activeConversation ? activeConversation.messages : [];
   

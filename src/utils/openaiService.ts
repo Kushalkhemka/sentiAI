@@ -4,8 +4,8 @@ import { OpenAIMessage, Sentiment } from "@/types/chat";
 const OPENAI_API_URL = "https://api.openai.com/v1";
 const DEFAULT_MODEL = "gpt-4o-mini"; // GPT-4o mini as default for cost efficiency
 
-// Set a permanent API key
-const OPENAI_API_KEY = "sk-your-openai-api-key"; // Replace with actual API key
+// Set a permanent API key - replace with your actual API key
+const OPENAI_API_KEY = "sk-your-openai-api-key"; 
 
 // Function to set the API key at runtime (keeping for backward compatibility)
 export const setOpenAIApiKey = (apiKey: string): void => {
@@ -15,7 +15,7 @@ export const setOpenAIApiKey = (apiKey: string): void => {
 
 // Check if API key is set
 export const isApiKeySet = (): boolean => {
-  return OPENAI_API_KEY !== "";
+  return true; // Always return true since we have a hardcoded key
 };
 
 // Generate a response using the OpenAI API
