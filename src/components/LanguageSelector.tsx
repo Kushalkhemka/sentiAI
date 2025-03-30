@@ -13,15 +13,17 @@ import {
 interface LanguageSelectorProps {
   selectedLanguage: string;
   onSelectLanguage: (language: string) => void;
+  disabled?: boolean;
 }
 
 const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   selectedLanguage,
-  onSelectLanguage
+  onSelectLanguage,
+  disabled = false
 }) => {
   return (
     <div className="w-full">
-      <Select value={selectedLanguage} onValueChange={onSelectLanguage}>
+      <Select value={selectedLanguage} onValueChange={onSelectLanguage} disabled={disabled}>
         <SelectTrigger className="w-full">
           <SelectValue placeholder="Select language" />
         </SelectTrigger>
