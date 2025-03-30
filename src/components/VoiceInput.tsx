@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Mic, MicOff } from "lucide-react";
+import { Mic, MicOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VoiceRecognitionState } from "@/types/chat";
 import { toast } from "@/components/ui/use-toast";
@@ -8,11 +8,13 @@ import { toast } from "@/components/ui/use-toast";
 interface VoiceInputProps {
   onTranscriptComplete: (transcript: string) => void;
   isDisabled?: boolean;
+  onCancel?: () => void;
 }
 
 const VoiceInput: React.FC<VoiceInputProps> = ({ 
   onTranscriptComplete,
-  isDisabled = false
+  isDisabled = false,
+  onCancel
 }) => {
   const [state, setState] = useState<VoiceRecognitionState>({
     isListening: false,
@@ -109,20 +111,26 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
     }
   }, []);
 
-  // Cleanup on unmount
+  const handleCancel = () => {
+    stopListening();
+    if (onCancel) {
+      onCancel();
+    }
+  };
+
+  // Auto-start listening when the component mounts
   useEffect(() => {
-    return () => {
-      stopListening();
-    };
-  }, [stopListening]);
+    startListening();
+    return stopListening;
+  }, [startListening, stopListening]);
 
   return (
-    <div>
+    <div className="relative flex items-center space-x-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-xl">
       <Button
         type="button"
         size="icon"
-        variant="ghost"
-        className={`rounded-full h-10 w-10 ${state.isListening ? 'bg-red-100 text-red-500' : ''}`}
+        variant={state.isListening ? "destructive" : "outline"}
+        className="rounded-full h-10 w-10"
         onClick={state.isListening ? stopListening : startListening}
         disabled={isDisabled || !browserSupportsSpeechRecognition}
       >
@@ -136,16 +144,32 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
         </span>
       </Button>
       
-      {state.isListening && (
-        <div className="text-xs mt-1 text-muted-foreground">
-          <div className="flex space-x-1 justify-center">
-            <div className="h-1.5 w-1.5 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-            <div className="h-1.5 w-1.5 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-            <div className="h-1.5 w-1.5 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+      <div className="flex-1">
+        {state.isListening ? (
+          <div className="text-sm">
+            <div className="flex space-x-1 mb-1">
+              <div className="h-2 w-2 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+              <div className="h-2 w-2 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+              <div className="h-2 w-2 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+            </div>
+            <p className="text-sm text-muted-foreground truncate max-w-[200px]">
+              {state.transcript || "Listening..."}
+            </p>
           </div>
-          <p>Listening...</p>
-        </div>
-      )}
+        ) : (
+          <p className="text-sm text-muted-foreground">Voice input ready</p>
+        )}
+      </div>
+
+      <Button 
+        size="icon"
+        variant="ghost"
+        className="rounded-full h-8 w-8"
+        onClick={handleCancel}
+      >
+        <X className="h-4 w-4" />
+        <span className="sr-only">Cancel</span>
+      </Button>
     </div>
   );
 };

@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { User, UserProfile } from '@/types/chat';
+import { loadUserConversations, saveUserConversations, loadUserActiveConversationId, saveUserActiveConversationId } from '@/utils/storage';
 
 interface AuthContextType {
   user: User | null;
@@ -101,9 +102,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Store profile
       localStorage.setItem(`user_profile_${userData.email}`, JSON.stringify(userProfile));
       
-      // Create user object
+      // Create user object with a consistent ID based on email
+      const userId = uuidv4();
+      
       const newUser: User = {
-        id: uuidv4(),
+        id: userId,
         email: userData.email,
         name: userData.name,
         profile: userProfile
@@ -123,6 +126,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const logout = () => {
+    // Save user conversations before logout
+    if (user) {
+      const conversations = loadUserConversations(user.id);
+      saveUserConversations(user.id, conversations);
+    }
+    
     setUser(null);
     localStorage.removeItem('user');
   };

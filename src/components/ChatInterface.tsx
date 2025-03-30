@@ -90,14 +90,12 @@ const ChatInterface: React.FC = () => {
   }, [disclaimerAccepted, vectorDBInitialized]);
   
   useEffect(() => {
-    if (disclaimerAccepted) {
-      const storedConversations = loadConversations().filter(c => 
-        user?.id && c.userId === user.id
-      );
+    if (disclaimerAccepted && user) {
+      const storedConversations = loadUserConversations(user.id);
       
       setConversations(storedConversations);
       
-      const storedActiveId = loadActiveConversationId();
+      const storedActiveId = loadUserActiveConversationId(user.id);
       
       if (storedActiveId && storedConversations.some(c => c.id === storedActiveId)) {
         setActiveConversationId(storedActiveId);
@@ -107,7 +105,7 @@ const ChatInterface: React.FC = () => {
         createNewConversation();
       }
       
-      const storedPreferences = localStorage.getItem('user_preferences');
+      const storedPreferences = localStorage.getItem(`user_preferences_${user.id}`);
       if (storedPreferences) {
         const parsedPrefs = JSON.parse(storedPreferences) as UserPreferences;
         setPreferences(parsedPrefs);
@@ -131,22 +129,24 @@ const ChatInterface: React.FC = () => {
   }, [disclaimerAccepted, vectorDBInitialized, user]);
   
   useEffect(() => {
-    if (conversations.length > 0) {
-      saveConversations(conversations);
+    if (conversations.length > 0 && user) {
+      saveUserConversations(user.id, conversations);
       
       const records = calculateHappinessRecords(conversations);
       setHappinessRecords(records);
     }
-  }, [conversations]);
+  }, [conversations, user]);
   
   useEffect(() => {
-    if (activeConversationId) {
-      saveActiveConversationId(activeConversationId);
+    if (activeConversationId && user) {
+      saveUserActiveConversationId(user.id, activeConversationId);
     }
-  }, [activeConversationId]);
+  }, [activeConversationId, user]);
   
   useEffect(() => {
-    localStorage.setItem('user_preferences', JSON.stringify(preferences));
+    if (user) {
+      localStorage.setItem(`user_preferences_${user.id}`, JSON.stringify(preferences));
+    }
     
     if (preferences.theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -171,7 +171,7 @@ const ChatInterface: React.FC = () => {
     } else {
       resetToDefaultTheme(preferences.theme === 'dark');
     }
-  }, [preferences, activeConversationId, conversations]);
+  }, [preferences, activeConversationId, conversations, user]);
   
   useEffect(() => {
     if (activeConversationId) {
@@ -250,7 +250,9 @@ const ChatInterface: React.FC = () => {
         ...newPrefs
       };
       
-      localStorage.setItem('user_preferences', JSON.stringify(updatedPreferences));
+      if (user) {
+        localStorage.setItem(`user_preferences_${user.id}`, JSON.stringify(updatedPreferences));
+      }
       
       return updatedPreferences;
     });
@@ -289,6 +291,7 @@ const ChatInterface: React.FC = () => {
     try {
       const detectedLanguage = language || await detectLanguage(content);
       userMessage.language = detectedLanguage;
+      console.log(`Detected language for user message: ${detectedLanguage}`);
       
       if (preferences.preferredLanguage && preferences.preferredLanguage !== detectedLanguage && preferences.autoTranslateEnabled) {
         try {
@@ -296,6 +299,7 @@ const ChatInterface: React.FC = () => {
           userMessage.translatedFrom = detectedLanguage;
           const translatedContent = await translateText(content, preferences.preferredLanguage);
           userMessage.content = translatedContent;
+          console.log(`Translated user message from ${detectedLanguage} to ${preferences.preferredLanguage}`);
         } catch (error) {
           console.error("Translation error:", error);
         }
@@ -424,7 +428,9 @@ const ChatInterface: React.FC = () => {
         });
       }
       
-      systemPrompt += `\n\nRespond in the following language: ${preferences.preferredLanguage}`;
+      if (preferences.preferredLanguage) {
+        systemPrompt += `\n\nIMPORTANT: You MUST respond in the following language: ${preferences.preferredLanguage}`;
+      }
       
       conversationMessages.push({
         role: "system",
@@ -442,8 +448,11 @@ const ChatInterface: React.FC = () => {
         }
       }
       
+      console.log("Generating AI response with preferred language:", preferences.preferredLanguage);
+      
       try {
         botResponse = await generateOpenAIResponse(conversationMessages, userMessage.sentiment);
+        console.log("Generated raw bot response");
       } catch (error) {
         console.error("OpenAI API error:", error);
         const { generateResponse } = await import("@/utils/chatResponses");
@@ -453,7 +462,10 @@ const ChatInterface: React.FC = () => {
       if (preferences.autoTranslateEnabled && preferences.preferredLanguage) {
         try {
           const detectedLanguage = await detectLanguage(botResponse);
+          console.log(`Detected language for bot response: ${detectedLanguage}`);
+          
           if (detectedLanguage !== preferences.preferredLanguage) {
+            console.log(`Translating bot response from ${detectedLanguage} to ${preferences.preferredLanguage}`);
             botResponse = await translateText(botResponse, preferences.preferredLanguage);
           }
         } catch (error) {

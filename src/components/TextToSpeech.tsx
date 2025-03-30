@@ -12,6 +12,7 @@ interface TextToSpeechProps {
 
 const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, disabled = false }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handlePlay = async () => {
@@ -22,7 +23,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, disabled = false }) =
     }
 
     try {
-      setIsPlaying(true);
+      setIsLoading(true);
       
       const audioData = await textToSpeech(text);
       
@@ -42,7 +43,8 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, disabled = false }) =
         audioRef.current.src = url;
       }
       
-      audioRef.current.play();
+      setIsPlaying(true);
+      await audioRef.current.play();
     } catch (error) {
       console.error('Error playing audio:', error);
       setIsPlaying(false);
@@ -52,6 +54,8 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, disabled = false }) =
         description: "There was an error generating the audio. Please try again later.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -70,9 +74,9 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, disabled = false }) =
       type="button"
       size="icon"
       variant="ghost"
-      className={`rounded-full h-7 w-7 ${isPlaying ? 'bg-primary/20' : ''}`}
+      className={`rounded-full h-7 w-7 ${isPlaying ? 'bg-primary/20' : ''} ${isLoading ? 'animate-pulse' : ''}`}
       onClick={handlePlay}
-      disabled={disabled || !text}
+      disabled={disabled || !text || isLoading}
     >
       {isPlaying ? (
         <VolumeX className="h-4 w-4" />

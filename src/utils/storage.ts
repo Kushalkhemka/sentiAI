@@ -86,3 +86,63 @@ export const findMainSentiment = (messages: Message[]) => {
   
   return mainSentiment;
 };
+
+// Save user-specific conversations
+export const saveUserConversations = (userId: string, conversations: ChatHistory[]): void => {
+  try {
+    const userKey = `${userId}-${CONVERSATIONS_KEY}`;
+    localStorage.setItem(userKey, JSON.stringify(conversations));
+  } catch (error) {
+    console.error("Error saving user conversations:", error);
+  }
+};
+
+// Load user-specific conversations
+export const loadUserConversations = (userId: string): ChatHistory[] => {
+  try {
+    const userKey = `${userId}-${CONVERSATIONS_KEY}`;
+    const storedConversations = localStorage.getItem(userKey);
+    if (!storedConversations) return [];
+
+    const conversations = JSON.parse(storedConversations);
+    
+    // Convert string dates back to Date objects
+    return conversations.map((conversation: any) => ({
+      ...conversation,
+      createdAt: new Date(conversation.createdAt),
+      updatedAt: new Date(conversation.updatedAt),
+      messages: conversation.messages.map((msg: any) => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp)
+      }))
+    }));
+  } catch (error) {
+    console.error("Error loading user conversations:", error);
+    return [];
+  }
+};
+
+// Save user-specific active conversation ID
+export const saveUserActiveConversationId = (userId: string, conversationId: string | null): void => {
+  try {
+    const userKey = `${userId}-${ACTIVE_CONVERSATION_KEY}`;
+    if (conversationId) {
+      localStorage.setItem(userKey, conversationId);
+    } else {
+      localStorage.removeItem(userKey);
+    }
+  } catch (error) {
+    console.error("Error saving user active conversation ID:", error);
+  }
+};
+
+// Load user-specific active conversation ID
+export const loadUserActiveConversationId = (userId: string): string | null => {
+  try {
+    const userKey = `${userId}-${ACTIVE_CONVERSATION_KEY}`;
+    return localStorage.getItem(userKey);
+  } catch (error) {
+    console.error("Error loading user active conversation ID:", error);
+    return null;
+  }
+};

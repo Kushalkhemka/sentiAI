@@ -4,6 +4,8 @@ import { OPENAI_API_URL, OPENAI_API_KEY, DEFAULT_MODEL } from "./config";
 // Function to detect the language of a text
 export const detectLanguage = async (text: string): Promise<string> => {
   try {
+    console.log("Detecting language for text:", text.substring(0, 50) + "...");
+    
     const response = await fetch(`${OPENAI_API_URL}/chat/completions`, {
       method: "POST",
       headers: {
@@ -33,7 +35,9 @@ export const detectLanguage = async (text: string): Promise<string> => {
     }
 
     const data = await response.json();
-    return data.choices[0].message.content.trim().toLowerCase().substring(0, 2); // Ensure we get just the 2-letter code
+    const detectedLanguage = data.choices[0].message.content.trim().toLowerCase().substring(0, 2);
+    console.log("Detected language:", detectedLanguage);
+    return detectedLanguage;
   } catch (error) {
     console.error("Language detection error:", error);
     return "en"; // Default to English on error
@@ -44,6 +48,8 @@ export const detectLanguage = async (text: string): Promise<string> => {
 // Updated to only require source text and target language
 export const translateText = async (text: string, targetLanguage: string): Promise<string> => {
   try {
+    console.log(`Translating text to ${targetLanguage}:`, text.substring(0, 50) + "...");
+    
     const response = await fetch(`${OPENAI_API_URL}/chat/completions`, {
       method: "POST",
       headers: {
@@ -73,7 +79,9 @@ export const translateText = async (text: string, targetLanguage: string): Promi
     }
 
     const data = await response.json();
-    return data.choices[0].message.content.trim();
+    const translatedText = data.choices[0].message.content.trim();
+    console.log("Translated text:", translatedText.substring(0, 50) + "...");
+    return translatedText;
   } catch (error) {
     console.error("Translation error:", error);
     return text; // Return original text on error
