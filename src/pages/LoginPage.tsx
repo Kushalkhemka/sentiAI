@@ -7,24 +7,34 @@ import { useAuth } from '@/contexts/AuthContext';
 import { User } from '@/types/chat';
 
 const LoginPage = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const { login, signup } = useAuth();
 
   useEffect(() => {
-    if (user) {
+    // Fixed redirection logic
+    if (user && !isLoading) {
+      console.log("User is logged in, redirecting to chat page", user);
       navigate('/chat');
     }
-  }, [user, navigate]);
+  }, [user, isLoading, navigate]);
 
   const handleLogin = async (user: User) => {
-    await login({ email: user.email, password: '' });
-    navigate('/chat');
+    console.log("Login attempt with:", user.email);
+    const result = await login({ email: user.email, password: '' });
+    if (result) {
+      console.log("Login successful, redirecting");
+      navigate('/chat');
+    }
   };
 
   const handleSignup = async (user: User) => {
-    await signup({ email: user.email, password: '', name: user.name });
-    navigate('/chat');
+    console.log("Signup attempt with:", user.email);
+    const result = await signup({ email: user.email, password: '', name: user.name });
+    if (result) {
+      console.log("Signup successful, redirecting");
+      navigate('/chat');
+    }
   };
 
   return (
