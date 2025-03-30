@@ -10,7 +10,7 @@ interface ChatHeaderProps {
 const ChatHeader: React.FC<ChatHeaderProps> = ({ className }) => {
   return (
     <div className={cn(
-      "py-4 px-6 border-b flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm z-10",
+      "py-4 px-6 border-b flex items-center justify-between sticky top-0 bg-background z-10",
       className
     )}>
       <div className="flex items-center space-x-3">

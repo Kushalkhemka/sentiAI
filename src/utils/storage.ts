@@ -2,8 +2,8 @@
 import { ChatHistory, Message } from "@/types/chat";
 
 // Local storage keys
-const CONVERSATIONS_KEY = "empathetic-chat-conversations";
-const ACTIVE_CONVERSATION_KEY = "empathetic-chat-active-conversation";
+const CONVERSATIONS_KEY = "sentiAI-chat-conversations";
+const ACTIVE_CONVERSATION_KEY = "sentiAI-chat-active-conversation";
 
 // Load conversations from local storage
 export const loadConversations = (): ChatHistory[] => {

@@ -14,6 +14,40 @@ interface ConversationSidebarProps {
   onDeleteConversation: (id: string) => void;
 }
 
+// Get a more prominent color for the conversation sentiment indicator
+const getSentimentIndicatorColor = (sentiment: Sentiment): string => {
+  switch (sentiment) {
+    case "positive":
+      return "bg-green-500";
+    case "hopeful":
+      return "bg-green-400";
+    case "calm":
+      return "bg-blue-400";
+    case "neutral":
+      return "bg-gray-400";
+    case "anxious":
+      return "bg-yellow-500";
+    case "overwhelmed":
+      return "bg-orange-400";
+    case "frustrated":
+      return "bg-orange-500";
+    case "confused":
+      return "bg-amber-400";
+    case "fearful":
+      return "bg-red-400";
+    case "negative":
+      return "bg-red-500";
+    case "depressed":
+      return "bg-purple-500";
+    case "suppressed":
+      return "bg-indigo-400";
+    case "urgent":
+      return "bg-red-600";
+    default:
+      return "bg-gray-400";
+  }
+};
+
 const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   conversations,
   activeConversationId,
@@ -22,7 +56,7 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   onDeleteConversation
 }) => {
   return (
-    <div className="w-64 h-full bg-muted/30 border-r flex flex-col">
+    <div className="w-64 h-full bg-white dark:bg-slate-900 border-r flex flex-col">
       <div className="p-4 border-b">
         <Button 
           onClick={onNewConversation}
@@ -60,7 +94,7 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                 {conversation.mainSentiment && (
                   <div className={cn(
                     "h-2 w-2 rounded-full flex-shrink-0",
-                    getSentimentColor(conversation.mainSentiment).split(" ")[0]
+                    getSentimentIndicatorColor(conversation.mainSentiment)
                   )} />
                 )}
                 

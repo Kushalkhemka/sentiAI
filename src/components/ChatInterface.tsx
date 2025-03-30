@@ -92,7 +92,7 @@ const ChatInterface: React.FC = () => {
   useEffect(() => {
     if (disclaimerAccepted) {
       const storedConversations = loadConversations().filter(c => 
-        !user?.id || !c.userId || c.userId === user.id
+        user?.id && c.userId === user.id
       );
       
       setConversations(storedConversations);
@@ -213,7 +213,7 @@ const ChatInterface: React.FC = () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       language: preferences.preferredLanguage,
-      userId: user?.id
+      userId: user?.id || 'anonymous'
     };
     
     setConversations(prev => [newConversation, ...prev]);

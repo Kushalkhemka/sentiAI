@@ -1,98 +1,97 @@
 
 import { Sentiment } from "../types/chat";
 
-// Enhanced and more empathetic response generation based on detected sentiment
+// Enhanced and more empathetic response generation with friendly, conversational tone
 export const generateResponse = (message: string, sentiment: Sentiment, conversationHistory: string = ""): string => {
   // Crisis responses take immediate priority
   if (sentiment === "urgent") {
-    return "I notice you may be in distress. Please remember that you're not alone. " +
-      "If you're in crisis, please reach out to a crisis helpline like the 988 Suicide & Crisis Lifeline " +
-      "(call or text 988) or text HOME to 741741 to reach the Crisis Text Line. " +
-      "Would it help to talk about what you're experiencing right now?";
+    return "Hey there, I'm really glad you reached out. It sounds like you're going through something really tough right now. " +
+      "Please remember you're not alone in this. If you're in crisis, please reach out to the 988 Suicide & Crisis Lifeline " +
+      "(call or text 988) or text HOME to 741741 for the Crisis Text Line. " +
+      "I'm here to listen if you want to talk about what you're feeling. Would that help?";
   }
 
-  // Advanced emotion-based responses with Chain-of-Thought reasoning
+  // Friendly, personalized responses with more conversational tone
   const responses = {
     positive: [
-      "I'm glad to hear you're feeling good! What's contributing to those positive feelings?",
-      "It's wonderful that you're in good spirits. Would you like to share more about what's going well?",
-      "I'm happy you're feeling positive. How can we maintain this energy going forward?"
+      "That's awesome! I'm so happy things are going well for you! What's been making you smile lately?",
+      "Look at you with all those positive vibes! ✨ Want to share more about what's going so well?",
+      "I'm totally vibing with your positive energy! How can we keep this momentum going for you?"
     ],
     negative: [
-      "I'm sorry to hear you're not feeling well. Would you like to talk more about what's troubling you?",
-      "That sounds difficult. Remember that it's okay to feel this way, and these feelings won't last forever.",
-      "I'm here to listen. Sometimes expressing our feelings can help us process them better."
+      "I'm sorry you're feeling down. Sometimes life can be really tough. What's been on your mind lately?",
+      "Hey, it's okay to not be okay sometimes. I'm right here whenever you want to talk through what's bothering you.",
+      "That sounds really difficult. Remember, these feelings won't last forever, though they're very real right now. Want to talk about it?"
     ],
     neutral: [
-      "How has your day been going so far?",
-      "I'm here to chat whenever you need support or just want to talk.",
-      "Is there anything specific on your mind that you'd like to discuss?"
+      "Hey friend! How's your day shaping up so far?",
+      "I'm all ears if you want to chat about anything that's on your mind today!",
+      "What's been on your mind recently? I'm here to listen or just chat if you need a friend."
     ],
     anxious: [
-      "It sounds like you might be feeling anxious. Taking slow, deep breaths can sometimes help in the moment.",
-      "Anxiety can be challenging. Would it help to talk about what's causing these feelings?",
-      "When I feel anxious, grounding exercises can help. Would you like to try one together?"
+      "I can hear you're feeling anxious, and that's completely understandable. Let's take a deep breath together, okay?",
+      "Anxiety can feel so overwhelming sometimes. What's making you feel worried right now?",
+      "When my friends feel anxious, sometimes just naming what's causing it can help take away some of its power. Want to try that together?"
     ],
     depressed: [
-      "I'm sorry you're feeling this way. Depression can make things seem hopeless, but please know you're not alone.",
-      "These feelings are valid, and reaching out is a positive step. Have you been able to talk to anyone else about how you're feeling?",
-      "Small steps can help. Perhaps we could think about one tiny positive action you might take today?"
+      "I'm here with you through these tough feelings. Depression can make everything seem gray, but you're not alone in this.",
+      "Even reaching out when you're feeling so low takes incredible strength. I'm really proud of you for that.",
+      "Sometimes when everything feels heavy, focusing on just one tiny positive thing can help. Is there any small bright spot in your day we could talk about?"
     ],
     hopeful: [
-      "It's great to hear a sense of hope in your words. What positive possibilities are you seeing?",
-      "Hope is powerful. What's giving you this optimistic outlook?",
-      "I'm glad you're feeling hopeful. How can we build on this positive momentum?"
+      "I can feel that spark of hope in your words, and it's beautiful! What possibilities are you seeing right now?",
+      "That sense of hope is so precious! What's giving you that little light of optimism?",
+      "I love hearing that hopeful tone! Let's build on this positive energy - what's making you feel this way?"
     ],
     overwhelmed: [
-      "It sounds like you have a lot on your plate right now. Would it help to break things down into smaller steps?",
-      "Feeling overwhelmed is natural when facing many challenges. Which one feels most pressing right now?",
-      "Let's take a step back and breathe. We can approach one thing at a time."
+      "Whoa, it sounds like you have A LOT going on right now. Let's break it down together - what's the biggest thing on your plate?",
+      "Being overwhelmed is totally normal when life throws too much at us at once. Which part feels most urgent to tackle?",
+      "It's like you're juggling too many balls at once! Let's focus on just one thing for now - which situation needs attention first?"
     ],
     calm: [
-      "It's wonderful that you're feeling calm. What practices help you maintain this sense of peace?",
-      "Calmness is a valuable state. How did you arrive at this peaceful mindset?",
-      "This sense of calm can be a great foundation. Is there anything you'd like to explore from this grounded place?"
+      "That peaceful feeling is something to cherish! What helps you maintain this wonderful sense of calm?",
+      "I'm loving this zen energy you've got going! How did you create this peaceful space for yourself?",
+      "There's something so special about finding calm in our chaotic world. What practices help you stay centered?"
     ],
     frustrated: [
-      "I can sense your frustration. It's completely valid to feel this way when things aren't going as expected.",
-      "It seems like you're dealing with some frustration. Would it help to talk about what's causing this?",
-      "Frustration can be challenging to navigate. Is there a specific situation that's contributing to this feeling?"
+      "Ugh, that sounds super frustrating! I'd be feeling exactly the same way in your situation.",
+      "It's totally okay to feel frustrated when things aren't going as planned. Want to vent about it? I'm all ears!",
+      "I can practically feel your frustration through the screen! What's been getting under your skin lately?"
     ],
     suppressed: [
-      "I notice you're saying you're okay, but I'm wondering if there might be more you'd like to share?",
-      "Sometimes when we say we're 'fine,' there are other feelings beneath the surface. It's safe to express those here if you'd like.",
-      "I'm hearing that you're okay, but I'm also sensing there might be more to it. Would you like to talk more about what's going on?"
+      "You know, sometimes when we say we're 'fine,' there might be more going on beneath the surface. It's safe to share those deeper feelings here if you want.",
+      "I notice you're saying you're okay, but I'm getting the sense there might be more to it? It's just us here - you can be real with me.",
+      "Hey, just checking in - you said you're fine, but sometimes that's our go-to when we don't want to unpack what's really going on. I'm here if you want to dig deeper."
     ],
     confused: [
-      "It sounds like you might be feeling uncertain about some things. Would it help to explore that confusion together?",
-      "Being confused can feel uncomfortable. Is there a specific situation that's causing this uncertainty?",
-      "I notice you might be feeling a bit lost. Sometimes talking through our thoughts can help bring clarity."
+      "Feeling confused is like being lost in a maze, right? Let's try to find some clarity together - what's got you puzzled?",
+      "Being uncertain about things can feel so unsettling. Want to talk through what's causing the confusion?",
+      "It's like having a mental fog when we're confused about something important. Let's see if we can clear it up a bit by talking it through."
     ],
     fearful: [
-      "I can hear that you're feeling afraid, which is completely understandable. Would you like to talk about what's causing this fear?",
-      "Fear is a powerful emotion and often has important things to tell us. What do you think your fear might be trying to protect you from?",
-      "Being scared is a natural response to perceived threats. Is there something specific that's triggered this feeling for you?"
+      "I hear that you're scared, and that's completely valid. Fear is actually trying to protect us sometimes. What's triggering this feeling for you?",
+      "Being afraid can feel so overwhelming. Remember you're not alone with these feelings - I'm right here with you.",
+      "Fear can be really powerful. Sometimes just naming what we're afraid of can help reduce its grip on us. What's scaring you the most right now?"
     ]
   };
 
-  // Advanced context-aware responses using the conversation history
+  // Context-aware responses
   if (conversationHistory && conversationHistory.length > 0) {
-    // Look for repeated patterns or topics in the conversation
     if (conversationHistory.includes("family") && message.toLowerCase().includes("family")) {
-      return "I notice family relationships seem to be an important theme in our conversation. Would you like to explore how these relationships are affecting you?";
+      return "Family relationships can be so complex, can't they? I notice we've been talking about your family a bit. How are those relationships affecting your wellbeing right now?";
     }
     
     if (conversationHistory.includes("work") && message.toLowerCase().includes("work")) {
-      return "Work seems to be coming up frequently in our discussion. How is your work situation impacting your overall wellbeing?";
+      return "Work seems to be a recurring theme in our chats. How's the job situation impacting your daily happiness? Sometimes our work life can really affect our overall mood.";
     }
   }
   
-  // Handle suppressed emotions specifically - detect when someone might be hiding their true feelings
+  // Special handling for suppressed emotions
   if (sentiment === "suppressed") {
-    return "I notice you said you're fine, but sometimes that word can cover many different feelings. It's okay if you're not actually feeling fine right now. Would you like to share more about what's really going on?";
+    return "I notice you're saying you're fine, but sometimes that word can be our way of glossing over deeper feelings. It's totally okay if you're not actually feeling fine right now. This is a safe space - what's really going on?";
   }
 
-  // Select a random response from the appropriate category
+  // Select a random response from the appropriate category with a more natural, friendly tone
   const appropriateResponses = responses[sentiment] || responses.neutral;
   const randomIndex = Math.floor(Math.random() * appropriateResponses.length);
   
@@ -101,8 +100,8 @@ export const generateResponse = (message: string, sentiment: Sentiment, conversa
 
 export const getInitialBotMessages = (): string[] => {
   return [
-    "Hi there! I'm here to chat and provide a supportive space. How are you feeling today?",
-    "Hello! I'm your empathetic chat companion. I'm here to listen and support you. How can I help today?",
-    "Welcome! I'm here to provide a judgment-free space to talk. How are you doing right now?"
+    "Hey there! 👋 I'm your SentiAI friend, here to chat and provide support. How are you feeling today?",
+    "Hi friend! I'm your SentiAI companion. I'm here to listen and support you whenever you need someone to talk to. What's on your mind?",
+    "Welcome! I'm your judgment-free space to talk about anything. How's life treating you today?"
   ];
 };
