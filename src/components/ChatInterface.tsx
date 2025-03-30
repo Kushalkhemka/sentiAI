@@ -25,7 +25,11 @@ import {
   saveConversations, 
   loadActiveConversationId, 
   saveActiveConversationId,
-  findMainSentiment
+  findMainSentiment,
+  loadUserConversations,
+  saveUserConversations,
+  loadUserActiveConversationId,
+  saveUserActiveConversationId
 } from "@/utils/storage";
 import useOpenAI from "@/hooks/useOpenAI";
 import { 
