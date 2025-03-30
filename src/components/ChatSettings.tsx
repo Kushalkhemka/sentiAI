@@ -44,6 +44,10 @@ const ChatSettings: React.FC<ChatSettingsProps> = ({
     onUpdatePreferences({ theme });
   };
 
+  const handleToggleAdaptiveColors = () => {
+    onUpdatePreferences({ adaptiveColorsEnabled: !preferences.adaptiveColorsEnabled });
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -62,16 +66,6 @@ const ChatSettings: React.FC<ChatSettingsProps> = ({
         
         <div className="py-6 space-y-6">
           <div className="space-y-2">
-            <h3 className="text-lg font-medium">API Configuration</h3>
-            <p className="text-sm text-muted-foreground">
-              Connect your OpenAI API key to enable advanced features
-            </p>
-            <Button onClick={onOpenApiKeyModal} className="w-full">
-              Configure API Key
-            </Button>
-          </div>
-          
-          <div className="space-y-2">
             <h3 className="text-lg font-medium">Language</h3>
             <p className="text-sm text-muted-foreground">
               Select your preferred language
@@ -80,6 +74,51 @@ const ChatSettings: React.FC<ChatSettingsProps> = ({
               selectedLanguage={preferences.preferredLanguage}
               onSelectLanguage={handleLanguageChange}
             />
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Appearance</h3>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="adaptive-colors">Adaptive Colors</Label>
+                <p className="text-sm text-muted-foreground">
+                  Change UI colors based on your emotional state
+                </p>
+              </div>
+              <Switch
+                id="adaptive-colors"
+                checked={preferences.adaptiveColorsEnabled || false}
+                onCheckedChange={handleToggleAdaptiveColors}
+              />
+            </div>
+            
+            <div className="space-y-2 pt-2">
+              <h4 className="text-sm font-medium">Theme</h4>
+              <div className="flex space-x-2">
+                <Button
+                  variant={preferences.theme === 'light' ? 'default' : 'outline'}
+                  onClick={() => handleThemeChange('light')}
+                  className="flex-1"
+                >
+                  Light
+                </Button>
+                <Button
+                  variant={preferences.theme === 'dark' ? 'default' : 'outline'}
+                  onClick={() => handleThemeChange('dark')}
+                  className="flex-1"
+                >
+                  Dark
+                </Button>
+                <Button
+                  variant={preferences.theme === 'system' ? 'default' : 'outline'}
+                  onClick={() => handleThemeChange('system')}
+                  className="flex-1"
+                >
+                  System
+                </Button>
+              </div>
+            </div>
           </div>
           
           <div className="space-y-4">
@@ -111,33 +150,6 @@ const ChatSettings: React.FC<ChatSettingsProps> = ({
                 checked={preferences.autoTranslateEnabled}
                 onCheckedChange={handleToggleAutoTranslate}
               />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <h3 className="text-lg font-medium">Theme</h3>
-            <div className="flex space-x-2">
-              <Button
-                variant={preferences.theme === 'light' ? 'default' : 'outline'}
-                onClick={() => handleThemeChange('light')}
-                className="flex-1"
-              >
-                Light
-              </Button>
-              <Button
-                variant={preferences.theme === 'dark' ? 'default' : 'outline'}
-                onClick={() => handleThemeChange('dark')}
-                className="flex-1"
-              >
-                Dark
-              </Button>
-              <Button
-                variant={preferences.theme === 'system' ? 'default' : 'outline'}
-                onClick={() => handleThemeChange('system')}
-                className="flex-1"
-              >
-                System
-              </Button>
             </div>
           </div>
         </div>

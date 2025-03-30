@@ -31,6 +31,8 @@ export interface UserProfile {
   name?: string;
   createdAt: Date;
   updatedAt: Date;
+  email?: string; // Added for authentication
+  userId?: string; // Added for authentication
 }
 
 export interface HappinessRecord {
@@ -48,6 +50,7 @@ export interface ChatHistory {
   mainSentiment?: Sentiment;
   tags?: string[]; // Added tags for categorizing conversations
   language?: string; // Primary language of the conversation
+  userId?: string; // Added for authentication
 }
 
 export interface SentimentAnalysisResult {
@@ -104,6 +107,26 @@ export interface UserPreferences {
   textToSpeechEnabled: boolean;
   autoTranslateEnabled: boolean;
   theme: "light" | "dark" | "system";
+  adaptiveColorsEnabled?: boolean; // Added for adaptive colors
+}
+
+// Authentication related types
+export interface AuthState {
+  user: User | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  profile?: UserProfile;
+}
+
+export interface Credentials {
+  email: string;
+  password: string;
 }
 
 // ChromaDB types
@@ -122,4 +145,14 @@ export interface VectorDBEntry {
 export interface ChatSuggestion {
   text: string;
   type: "question" | "tip" | "exercise";
+}
+
+// MoodJourney visualization data type
+export interface MoodJourneyData {
+  period: string; // 'day', 'week', 'month'
+  data: {
+    label: string; // date or time period
+    value: number; // sentiment score
+    sentiment: Sentiment;
+  }[];
 }

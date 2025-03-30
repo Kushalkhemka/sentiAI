@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Settings, Info, User } from "lucide-react";
+import { Info, User, LogOut } from "lucide-react";
 import ChatSettings from './ChatSettings';
 import ApiKeyModal from './ApiKeyModal';
 import HappinessMeter from './HappinessMeter';
 import { UserPreferences, HappinessRecord, UserProfile } from '@/types/chat';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import {
   Tooltip,
   TooltipContent,
@@ -25,6 +27,8 @@ interface CustomChatHeaderProps {
   happinessRecords: HappinessRecord[];
   userProfile?: UserProfile;
   onUpdateUserProfile: (profile: UserProfile) => void;
+  onToggleMoodJourney: () => void;
+  showMoodJourney: boolean;
 }
 
 const CustomChatHeader: React.FC<CustomChatHeaderProps> = ({
@@ -32,11 +36,20 @@ const CustomChatHeader: React.FC<CustomChatHeaderProps> = ({
   onUpdatePreferences,
   happinessRecords,
   userProfile,
-  onUpdateUserProfile
+  onUpdateUserProfile,
+  onToggleMoodJourney,
+  showMoodJourney
 }) => {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+  
   return (
     <div className="p-4 border-b flex items-center justify-between">
       <div className="flex items-center space-x-2">
@@ -62,6 +75,14 @@ const CustomChatHeader: React.FC<CustomChatHeaderProps> = ({
       </div>
       
       <div className="flex items-center space-x-2">
+        <Button 
+          variant={showMoodJourney ? "default" : "outline"} 
+          onClick={onToggleMoodJourney}
+          className="hidden sm:flex"
+        >
+          {showMoodJourney ? "Hide Mood Journey" : "Show Mood Journey"}
+        </Button>
+        
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="hidden sm:flex">
@@ -86,8 +107,23 @@ const CustomChatHeader: React.FC<CustomChatHeaderProps> = ({
         <ChatSettings 
           preferences={preferences}
           onUpdatePreferences={onUpdatePreferences}
-          onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+          onOpenApiKeyModal={() => setIsApiKeyModalOpen(false)}
         />
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="sr-only">Logout</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Logout</TooltipContent>
+        </Tooltip>
       </div>
       
       <ApiKeyModal 

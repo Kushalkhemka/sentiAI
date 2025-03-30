@@ -7,6 +7,9 @@ import MessageInput from "./MessageInput";
 import ChatDisclaimer from "./ChatDisclaimer";
 import ConversationSidebar from "./ConversationSidebar";
 import ChatSuggestions from "./ChatSuggestions";
+import MoodJourney from "./MoodJourney";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { 
   Message, 
   ChatHistory as ChatHistoryType, 
@@ -46,6 +49,7 @@ import {
   generateSuggestions, 
   calculateHappinessRecords 
 } from "@/utils/suggestionGenerator";
+import { getSentimentColorTheme, applyColorTheme, resetToDefaultTheme } from "@/utils/adaptiveColors";
 
 const ChatInterface: React.FC = () => {
   const [conversations, setConversations] = useState<ChatHistoryType[]>([]);
@@ -56,14 +60,24 @@ const ChatInterface: React.FC = () => {
     preferredLanguage: "en",
     textToSpeechEnabled: false,
     autoTranslateEnabled: false,
-    theme: "light"
+    theme: "light",
+    adaptiveColorsEnabled: false
   });
-  const [userProfile, setUserProfile] = useState<UserProfile | undefined>(undefined);
   const [happinessRecords, setHappinessRecords] = useState<HappinessRecord[]>([]);
   const [chatSuggestions, setChatSuggestions] = useState<ChatSuggestion[]>([]);
   const [vectorDBInitialized, setVectorDBInitialized] = useState(false);
+  const [showMoodJourney, setShowMoodJourney] = useState(false);
   
   const { apiKeySet } = useOpenAI();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+  }, [user, navigate]);
   
   useEffect(() => {
     if (disclaimerAccepted && !vectorDBInitialized) {
@@ -78,7 +92,11 @@ const ChatInterface: React.FC = () => {
   
   useEffect(() => {
     if (disclaimerAccepted) {
-      const storedConversations = loadConversations();
+      // Load user-specific conversations
+      const storedConversations = loadConversations().filter(c => 
+        !user?.id || !c.userId || c.userId === user.id
+      );
+      
       setConversations(storedConversations);
       
       const storedActiveId = loadActiveConversationId();
@@ -93,25 +111,14 @@ const ChatInterface: React.FC = () => {
       
       const storedPreferences = localStorage.getItem('user_preferences');
       if (storedPreferences) {
-        setPreferences(JSON.parse(storedPreferences));
-      }
-      
-      const storedProfile = localStorage.getItem('user_profile');
-      if (storedProfile) {
-        const parsedProfile = JSON.parse(storedProfile);
-        parsedProfile.createdAt = new Date(parsedProfile.createdAt);
-        parsedProfile.updatedAt = new Date(parsedProfile.updatedAt);
-        setUserProfile(parsedProfile);
-      } else {
-        const profilePrompted = localStorage.getItem('profile_prompted');
-        if (!profilePrompted) {
-          setTimeout(() => {
-            localStorage.setItem('profile_prompted', 'true');
-            setUserProfile({
-              createdAt: new Date(),
-              updatedAt: new Date()
-            });
-          }, 2000);
+        const parsedPrefs = JSON.parse(storedPreferences) as UserPreferences;
+        setPreferences(parsedPrefs);
+        
+        // Apply theme based on preferences
+        if (parsedPrefs.theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else if (parsedPrefs.theme === 'light') {
+          document.documentElement.classList.remove('dark');
         }
       }
       
@@ -124,7 +131,7 @@ const ChatInterface: React.FC = () => {
       const records = calculateHappinessRecords(storedConversations);
       setHappinessRecords(records);
     }
-  }, [disclaimerAccepted, vectorDBInitialized]);
+  }, [disclaimerAccepted, vectorDBInitialized, user]);
   
   useEffect(() => {
     if (conversations.length > 0) {
@@ -155,29 +162,42 @@ const ChatInterface: React.FC = () => {
         document.documentElement.classList.remove('dark');
       }
     }
-  }, [preferences]);
-  
-  useEffect(() => {
-    if (userProfile) {
-      localStorage.setItem('user_profile', JSON.stringify(userProfile));
+    
+    // Apply adaptive colors if enabled
+    if (preferences.adaptiveColorsEnabled && activeConversationId) {
+      const activeConversation = conversations.find(c => c.id === activeConversationId);
+      if (activeConversation && activeConversation.mainSentiment) {
+        const colorTheme = getSentimentColorTheme(activeConversation.mainSentiment);
+        applyColorTheme(colorTheme, preferences.theme === 'dark');
+      } else {
+        resetToDefaultTheme(preferences.theme === 'dark');
+      }
+    } else {
+      resetToDefaultTheme(preferences.theme === 'dark');
     }
-  }, [userProfile]);
+  }, [preferences, activeConversationId, conversations]);
   
   useEffect(() => {
     if (activeConversationId) {
       const activeConversation = conversations.find(c => c.id === activeConversationId);
       
-      generateSuggestions(activeConversation || null, conversations, userProfile)
+      // Apply adaptive colors if enabled
+      if (preferences.adaptiveColorsEnabled && activeConversation?.mainSentiment) {
+        const colorTheme = getSentimentColorTheme(activeConversation.mainSentiment);
+        applyColorTheme(colorTheme, preferences.theme === 'dark');
+      }
+      
+      generateSuggestions(activeConversation || null, conversations, user?.profile)
         .then(suggestions => {
           setChatSuggestions(suggestions);
         });
     } else {
-      generateSuggestions(null, conversations, userProfile)
+      generateSuggestions(null, conversations, user?.profile)
         .then(suggestions => {
           setChatSuggestions(suggestions);
         });
     }
-  }, [activeConversationId, conversations, userProfile]);
+  }, [activeConversationId, conversations, user?.profile, preferences.adaptiveColorsEnabled, preferences.theme]);
 
   const createNewConversation = () => {
     const newConversationId = uuidv4();
@@ -197,13 +217,14 @@ const ChatInterface: React.FC = () => {
       messages: [botMessage],
       createdAt: new Date(),
       updatedAt: new Date(),
-      language: preferences.preferredLanguage
+      language: preferences.preferredLanguage,
+      userId: user?.id // Associate with current user
     };
     
     setConversations(prev => [newConversation, ...prev]);
     setActiveConversationId(newConversationId);
     
-    generateSuggestions(null, conversations, userProfile)
+    generateSuggestions(null, conversations, user?.profile)
       .then(suggestions => {
         setChatSuggestions(suggestions);
       });
@@ -236,18 +257,6 @@ const ChatInterface: React.FC = () => {
       
       localStorage.setItem('user_preferences', JSON.stringify(updatedPreferences));
       
-      if (updatedPreferences.theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else if (updatedPreferences.theme === 'light') {
-        document.documentElement.classList.remove('dark');
-      } else {
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      }
-      
       return updatedPreferences;
     });
     
@@ -258,7 +267,10 @@ const ChatInterface: React.FC = () => {
   };
   
   const updateUserProfile = (profile: UserProfile) => {
-    setUserProfile(profile);
+    if (!user) return;
+    
+    const { updateUserProfile } = useAuth();
+    updateUserProfile(profile);
     
     toast({
       title: "Profile Updated",
@@ -283,8 +295,15 @@ const ChatInterface: React.FC = () => {
       const detectedLanguage = language || await detectLanguage(content);
       userMessage.language = detectedLanguage;
       
-      if (userMessage.language) {
-        userMessage.language = userMessage.language || preferences.preferredLanguage || "en";
+      if (preferences.preferredLanguage && preferences.preferredLanguage !== detectedLanguage && preferences.autoTranslateEnabled) {
+        try {
+          userMessage.originalText = content;
+          userMessage.translatedFrom = detectedLanguage;
+          const translatedContent = await translateText(content, detectedLanguage, preferences.preferredLanguage);
+          userMessage.content = translatedContent;
+        } catch (error) {
+          console.error("Translation error:", error);
+        }
       }
     } catch (error) {
       console.error("Error detecting language:", error);
@@ -377,14 +396,30 @@ const ChatInterface: React.FC = () => {
       let systemPrompt = `You are an empathetic AI assistant designed to provide emotional support and understanding. 
       You should respond with compassion, actively listen, and validate the user's feelings.
       If the user shows signs of crisis or mentions self-harm or suicide, provide resources like the 988 Crisis Lifeline.
-      Keep responses concise (max 3-4 sentences) and focused on emotional support.`;
+      Keep responses concise (max 3-4 sentences) and focused on emotional support.
+      Speak as if you're the user's trusted confidant and use a conversational tone that feels personal and caring.`;
       
-      if (userProfile) {
+      if (user?.profile) {
         systemPrompt += `\nThe user has provided the following profile information:`;
-        if (userProfile.name) systemPrompt += `\n- Name: ${userProfile.name}`;
-        if (userProfile.gender) systemPrompt += `\n- Gender: ${userProfile.gender}`;
-        if (userProfile.age) systemPrompt += `\n- Age: ${userProfile.age}`;
+        if (user.profile.name) systemPrompt += `\n- Name: ${user.profile.name}`;
+        if (user.profile.gender) systemPrompt += `\n- Gender: ${user.profile.gender}`;
+        if (user.profile.age) systemPrompt += `\n- Age: ${user.profile.age}`;
         systemPrompt += `\nTailor your response appropriately to this demographic information.`;
+        systemPrompt += `\nAddress them by name occasionally to create connection.`;
+        
+        // Add persona guidance based on profile
+        if (user.profile.gender === 'female') {
+          systemPrompt += `\nUse a nurturing and supportive communication style.`;
+        } else if (user.profile.gender === 'male') {
+          systemPrompt += `\nUse a straightforward yet supportive communication style.`;
+        }
+        
+        // Age-appropriate language
+        if (user.profile.age && user.profile.age < 18) {
+          systemPrompt += `\nUse age-appropriate language for a teenager.`;
+        } else if (user.profile.age && user.profile.age > 60) {
+          systemPrompt += `\nUse clear, respectful language without condescension.`;
+        }
       }
       
       systemPrompt += `\nThe user's current sentiment is: ${userMessage.sentiment}.`;
@@ -404,7 +439,7 @@ const ChatInterface: React.FC = () => {
       });
       
       if (activeConversation) {
-        const lastMessages = activeConversation.messages.slice(-10);
+        const lastMessages = activeConversation.messages.slice(-8);
         
         for (const msg of lastMessages) {
           conversationMessages.push({
@@ -420,6 +455,18 @@ const ChatInterface: React.FC = () => {
         console.error("OpenAI API error:", error);
         const { generateResponse } = await import("@/utils/chatResponses");
         botResponse = generateResponse(content, userMessage.sentiment);
+      }
+      
+      // If autoTranslate is enabled and response is not in preferred language
+      if (preferences.autoTranslateEnabled && preferences.preferredLanguage) {
+        try {
+          const detectedLanguage = await detectLanguage(botResponse);
+          if (detectedLanguage !== preferences.preferredLanguage) {
+            botResponse = await translateText(botResponse, detectedLanguage, preferences.preferredLanguage);
+          }
+        } catch (error) {
+          console.error("Error translating bot response:", error);
+        }
       }
       
       const botMessage: Message = {
@@ -448,7 +495,7 @@ const ChatInterface: React.FC = () => {
         messages: [...activeConversation!.messages, userMessage, botMessage]
       };
       
-      generateSuggestions(updatedConversation, conversations, userProfile)
+      generateSuggestions(updatedConversation, conversations, user?.profile)
         .then(suggestions => {
           setChatSuggestions(suggestions);
         });
@@ -507,9 +554,17 @@ const ChatInterface: React.FC = () => {
           preferences={preferences}
           onUpdatePreferences={updatePreferences}
           happinessRecords={happinessRecords}
-          userProfile={userProfile}
+          userProfile={user?.profile}
           onUpdateUserProfile={updateUserProfile}
+          onToggleMoodJourney={() => setShowMoodJourney(!showMoodJourney)}
+          showMoodJourney={showMoodJourney}
         />
+        
+        {showMoodJourney && (
+          <div className="p-4 border-b">
+            <MoodJourney records={happinessRecords} />
+          </div>
+        )}
         
         <ChatHistory messages={activeMessages} className="px-4" />
         
