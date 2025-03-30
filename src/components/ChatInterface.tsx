@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import ChatHistory from "./ChatHistory";
@@ -92,7 +91,6 @@ const ChatInterface: React.FC = () => {
   
   useEffect(() => {
     if (disclaimerAccepted) {
-      // Load user-specific conversations
       const storedConversations = loadConversations().filter(c => 
         !user?.id || !c.userId || c.userId === user.id
       );
@@ -114,7 +112,6 @@ const ChatInterface: React.FC = () => {
         const parsedPrefs = JSON.parse(storedPreferences) as UserPreferences;
         setPreferences(parsedPrefs);
         
-        // Apply theme based on preferences
         if (parsedPrefs.theme === 'dark') {
           document.documentElement.classList.add('dark');
         } else if (parsedPrefs.theme === 'light') {
@@ -163,7 +160,6 @@ const ChatInterface: React.FC = () => {
       }
     }
     
-    // Apply adaptive colors if enabled
     if (preferences.adaptiveColorsEnabled && activeConversationId) {
       const activeConversation = conversations.find(c => c.id === activeConversationId);
       if (activeConversation && activeConversation.mainSentiment) {
@@ -181,7 +177,6 @@ const ChatInterface: React.FC = () => {
     if (activeConversationId) {
       const activeConversation = conversations.find(c => c.id === activeConversationId);
       
-      // Apply adaptive colors if enabled
       if (preferences.adaptiveColorsEnabled && activeConversation?.mainSentiment) {
         const colorTheme = getSentimentColorTheme(activeConversation.mainSentiment);
         applyColorTheme(colorTheme, preferences.theme === 'dark');
@@ -218,7 +213,7 @@ const ChatInterface: React.FC = () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       language: preferences.preferredLanguage,
-      userId: user?.id // Associate with current user
+      userId: user?.id
     };
     
     setConversations(prev => [newConversation, ...prev]);
@@ -299,7 +294,7 @@ const ChatInterface: React.FC = () => {
         try {
           userMessage.originalText = content;
           userMessage.translatedFrom = detectedLanguage;
-          const translatedContent = await translateText(content, detectedLanguage, preferences.preferredLanguage);
+          const translatedContent = await translateText(content, preferences.preferredLanguage);
           userMessage.content = translatedContent;
         } catch (error) {
           console.error("Translation error:", error);
@@ -407,14 +402,12 @@ const ChatInterface: React.FC = () => {
         systemPrompt += `\nTailor your response appropriately to this demographic information.`;
         systemPrompt += `\nAddress them by name occasionally to create connection.`;
         
-        // Add persona guidance based on profile
         if (user.profile.gender === 'female') {
           systemPrompt += `\nUse a nurturing and supportive communication style.`;
         } else if (user.profile.gender === 'male') {
           systemPrompt += `\nUse a straightforward yet supportive communication style.`;
         }
         
-        // Age-appropriate language
         if (user.profile.age && user.profile.age < 18) {
           systemPrompt += `\nUse age-appropriate language for a teenager.`;
         } else if (user.profile.age && user.profile.age > 60) {
@@ -457,12 +450,11 @@ const ChatInterface: React.FC = () => {
         botResponse = generateResponse(content, userMessage.sentiment);
       }
       
-      // If autoTranslate is enabled and response is not in preferred language
       if (preferences.autoTranslateEnabled && preferences.preferredLanguage) {
         try {
           const detectedLanguage = await detectLanguage(botResponse);
           if (detectedLanguage !== preferences.preferredLanguage) {
-            botResponse = await translateText(botResponse, detectedLanguage, preferences.preferredLanguage);
+            botResponse = await translateText(botResponse, preferences.preferredLanguage);
           }
         } catch (error) {
           console.error("Error translating bot response:", error);
