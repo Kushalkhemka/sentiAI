@@ -45,10 +45,14 @@ export const detectLanguage = async (text: string): Promise<string> => {
 };
 
 // Function to translate text from one language to another
-// Updated to only require source text and target language
 export const translateText = async (text: string, targetLanguage: string): Promise<string> => {
   try {
     console.log(`Translating text to ${targetLanguage}:`, text.substring(0, 50) + "...");
+    
+    // For Hindi specifically, we'll use "Hinglish" instruction when appropriate
+    const systemInstruction = targetLanguage === "hi" 
+      ? `You are a translation tool. If the input appears to be Hinglish (Hindi written in English), translate to proper Hindi script. Otherwise, translate the following text into Hindi. Provide only the translated text, nothing else.`
+      : `You are a translation tool. Translate the following text into ${targetLanguage}. Provide only the translated text, nothing else.`;
     
     const response = await fetch(`${OPENAI_API_URL}/chat/completions`, {
       method: "POST",
@@ -61,7 +65,7 @@ export const translateText = async (text: string, targetLanguage: string): Promi
         messages: [
           {
             role: "system",
-            content: `You are a translation tool. Translate the following text into ${targetLanguage}. Provide only the translated text, nothing else.`
+            content: systemInstruction
           },
           {
             role: "user",
@@ -69,7 +73,7 @@ export const translateText = async (text: string, targetLanguage: string): Promi
           }
         ],
         temperature: 0.3,
-        max_tokens: 500,
+        max_tokens: 1000,
       }),
     });
 

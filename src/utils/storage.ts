@@ -92,6 +92,7 @@ export const saveUserConversations = (userId: string, conversations: ChatHistory
   try {
     const userKey = `${userId}-${CONVERSATIONS_KEY}`;
     localStorage.setItem(userKey, JSON.stringify(conversations));
+    console.log(`Saved ${conversations.length} conversations for user ${userId}`);
   } catch (error) {
     console.error("Error saving user conversations:", error);
   }
@@ -100,11 +101,20 @@ export const saveUserConversations = (userId: string, conversations: ChatHistory
 // Load user-specific conversations
 export const loadUserConversations = (userId: string): ChatHistory[] => {
   try {
+    if (!userId) {
+      console.log("No userId provided, returning empty conversations array");
+      return [];
+    }
+    
     const userKey = `${userId}-${CONVERSATIONS_KEY}`;
     const storedConversations = localStorage.getItem(userKey);
-    if (!storedConversations) return [];
+    if (!storedConversations) {
+      console.log(`No stored conversations found for user ${userId}`);
+      return [];
+    }
 
     const conversations = JSON.parse(storedConversations);
+    console.log(`Loaded ${conversations.length} conversations for user ${userId}`);
     
     // Convert string dates back to Date objects
     return conversations.map((conversation: any) => ({
@@ -125,11 +135,18 @@ export const loadUserConversations = (userId: string): ChatHistory[] => {
 // Save user-specific active conversation ID
 export const saveUserActiveConversationId = (userId: string, conversationId: string | null): void => {
   try {
+    if (!userId) {
+      console.warn("No userId provided, skipping save of active conversation ID");
+      return;
+    }
+    
     const userKey = `${userId}-${ACTIVE_CONVERSATION_KEY}`;
     if (conversationId) {
       localStorage.setItem(userKey, conversationId);
+      console.log(`Saved active conversation ID ${conversationId} for user ${userId}`);
     } else {
       localStorage.removeItem(userKey);
+      console.log(`Removed active conversation ID for user ${userId}`);
     }
   } catch (error) {
     console.error("Error saving user active conversation ID:", error);
@@ -139,8 +156,15 @@ export const saveUserActiveConversationId = (userId: string, conversationId: str
 // Load user-specific active conversation ID
 export const loadUserActiveConversationId = (userId: string): string | null => {
   try {
+    if (!userId) {
+      console.warn("No userId provided, cannot load active conversation ID");
+      return null;
+    }
+    
     const userKey = `${userId}-${ACTIVE_CONVERSATION_KEY}`;
-    return localStorage.getItem(userKey);
+    const activeId = localStorage.getItem(userKey);
+    console.log(`Loaded active conversation ID for user ${userId}: ${activeId}`);
+    return activeId;
   } catch (error) {
     console.error("Error loading user active conversation ID:", error);
     return null;
