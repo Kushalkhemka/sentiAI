@@ -31,6 +31,9 @@ const sentimentValueMap: Record<Sentiment, number> = {
 };
 
 const HappinessMeter: React.FC<HappinessMeterProps> = ({ records, days = 7 }) => {
+  // Ensure we have records, even if empty
+  const recordsToUse = records.length > 0 ? records : [createEmptyRecord()];
+  
   // Get the last 'days' number of days
   const today = startOfDay(new Date());
   const dateLabels = Array.from({ length: days }, (_, i) => {
@@ -40,12 +43,12 @@ const HappinessMeter: React.FC<HappinessMeterProps> = ({ records, days = 7 }) =>
   
   // Map records to the date labels
   const moodData = dateLabels.map(dateLabel => {
-    const record = records.find(r => r.date === dateLabel);
-    return record ? record.averageSentiment : null;
+    const record = recordsToUse.find(r => r.date === dateLabel);
+    return record ? record.averageSentiment : 0;  // Default to 0 if no record
   });
   
   // Calculate the current day's happiness score
-  const todayRecord = records.find(r => r.date === format(today, 'yyyy-MM-dd'));
+  const todayRecord = recordsToUse.find(r => r.date === format(today, 'yyyy-MM-dd'));
   const currentHappiness = todayRecord ? todayRecord.averageSentiment : 0;
   
   // Calculate trend (is happiness improving or declining?)
@@ -64,7 +67,7 @@ const HappinessMeter: React.FC<HappinessMeterProps> = ({ records, days = 7 }) =>
   }
   
   return (
-    <Card className="w-full">
+    <Card className="w-full bg-background border-border">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg">Happiness Meter</CardTitle>
@@ -86,7 +89,7 @@ const HappinessMeter: React.FC<HappinessMeterProps> = ({ records, days = 7 }) =>
         <div className="flex h-16 items-end gap-1 mb-4">
           {moodData.map((mood, index) => {
             const value = mood === null ? 0 : mood;
-            const height = Math.abs(value) * 100;
+            const height = Math.max(5, Math.abs(value) * 100); // Ensure at least 5% height for visibility
             return (
               <div 
                 key={index} 
@@ -126,5 +129,16 @@ const HappinessMeter: React.FC<HappinessMeterProps> = ({ records, days = 7 }) =>
     </Card>
   );
 };
+
+// Helper function to create an empty record for today
+function createEmptyRecord(): HappinessRecord {
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  return {
+    date: todayStr,
+    averageSentiment: 0, // Neutral
+    sentimentCounts: { "neutral": 1 } as Record<Sentiment, number>
+  };
+}
 
 export default HappinessMeter;

@@ -163,10 +163,17 @@ export const calculateHappinessRecords = (
   // Group messages by date
   const messagesByDate: Record<string, Message[]> = {};
   
+  // Add today's date if not present to ensure we always have a current record
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+  
   conversations.forEach(conversation => {
     conversation.messages.forEach(message => {
       if (message.sender === "user" && message.sentiment) {
-        const date = message.timestamp.toISOString().split('T')[0]; // YYYY-MM-DD
+        const date = message.timestamp ? 
+          new Date(message.timestamp).toISOString().split('T')[0] : 
+          todayStr;
+        
         if (!messagesByDate[date]) {
           messagesByDate[date] = [];
         }
@@ -174,6 +181,11 @@ export const calculateHappinessRecords = (
       }
     });
   });
+  
+  // Ensure we have a record for today even if empty
+  if (!messagesByDate[todayStr]) {
+    messagesByDate[todayStr] = [];
+  }
   
   // Calculate happiness score for each date
   const records: HappinessRecord[] = Object.entries(messagesByDate).map(([date, messages]) => {
@@ -187,7 +199,13 @@ export const calculateHappinessRecords = (
       }
     });
     
+    // If there are no messages with sentiment for today, default to neutral
     const averageSentiment = messages.length > 0 ? totalScore / messages.length : 0;
+    
+    // Default sentiment count for today if empty
+    if (date === todayStr && messages.length === 0) {
+      sentimentCounts["neutral"] = 1;
+    }
     
     return {
       date,
@@ -196,5 +214,6 @@ export const calculateHappinessRecords = (
     };
   });
   
+  // Sort by date
   return records.sort((a, b) => a.date.localeCompare(b.date));
 };

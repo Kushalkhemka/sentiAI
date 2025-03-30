@@ -47,7 +47,7 @@ const LoginPage = () => {
           className="max-w-md text-center mb-8"
         >
           <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl mb-2">
-            Empathetic AI Chat
+            SentiAI Chat
           </h1>
           <p className="text-muted-foreground max-w-[42rem] leading-normal mx-auto">
             Your compassionate AI companion for emotional support and well-being

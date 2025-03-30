@@ -56,7 +56,7 @@ const ChatSettings: React.FC<ChatSettingsProps> = ({
           <span className="sr-only">Settings</span>
         </Button>
       </SheetTrigger>
-      <SheetContent>
+      <SheetContent className="bg-background border-border">
         <SheetHeader>
           <SheetTitle>Chat Settings</SheetTitle>
           <SheetDescription>

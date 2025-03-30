@@ -44,6 +44,9 @@ const MoodJourney: React.FC<MoodJourneyProps> = ({ records }) => {
     const today = new Date();
     let data = [];
     
+    // Ensure we have records, even if empty
+    const recordsToUse = records.length > 0 ? records : [createEmptyRecord()];
+    
     if (period === "day") {
       // Last 24 hours with 4-hour intervals
       for (let i = 0; i < 6; i++) {
@@ -53,13 +56,8 @@ const MoodJourney: React.FC<MoodJourneyProps> = ({ records }) => {
         const timeStr = format(time, "ha");
         
         // Find records from this time period
-        const dayRecords = records.filter(r => {
-          const recordDate = r.date;
-          if (recordDate === format(today, "yyyy-MM-dd")) {
-            return true;
-          }
-          return false;
-        });
+        const todayStr = format(today, "yyyy-MM-dd");
+        const dayRecords = recordsToUse.filter(r => r.date === todayStr);
         
         const value = dayRecords.length > 0 ? dayRecords[0].averageSentiment : 0;
         let sentiment: Sentiment = "neutral";
@@ -79,7 +77,7 @@ const MoodJourney: React.FC<MoodJourneyProps> = ({ records }) => {
         const dateStr = format(date, "EEE");
         const dateKey = format(date, "yyyy-MM-dd");
         
-        const dayRecord = records.find(r => r.date === dateKey);
+        const dayRecord = recordsToUse.find(r => r.date === dateKey);
         const value = dayRecord ? dayRecord.averageSentiment : 0;
         
         let sentiment: Sentiment = "neutral";
@@ -105,7 +103,7 @@ const MoodJourney: React.FC<MoodJourneyProps> = ({ records }) => {
         for (let j = 0; j < 7; j++) {
           const date = subDays(endDate, j);
           const dateKey = format(date, "yyyy-MM-dd");
-          const dayRecord = records.find(r => r.date === dateKey);
+          const dayRecord = recordsToUse.find(r => r.date === dateKey);
           
           if (dayRecord) {
             weekTotal += dayRecord.averageSentiment;
@@ -163,7 +161,7 @@ const MoodJourney: React.FC<MoodJourneyProps> = ({ records }) => {
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full bg-background border-border">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">Mood Journey</CardTitle>
         <CardDescription>
@@ -229,7 +227,7 @@ const MoodJourney: React.FC<MoodJourneyProps> = ({ records }) => {
                 </span> recently.
               </>
             ) : (
-              "Not enough data to analyze mood patterns yet."
+              "Start chatting to track your mood patterns."
             )}
           </div>
         </div>
@@ -237,5 +235,16 @@ const MoodJourney: React.FC<MoodJourneyProps> = ({ records }) => {
     </Card>
   );
 };
+
+// Helper function to create an empty record for today
+function createEmptyRecord(): HappinessRecord {
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  return {
+    date: todayStr,
+    averageSentiment: 0, // Neutral
+    sentimentCounts: { "neutral": 1 } as Record<Sentiment, number>
+  };
+}
 
 export default MoodJourney;

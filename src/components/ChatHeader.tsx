@@ -18,7 +18,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ className }) => {
           <HeartPulse className="h-6 w-6" />
         </div>
         <div>
-          <h1 className="font-semibold text-lg">Empathetic Chat Assistant</h1>
+          <h1 className="font-semibold text-lg">SentiAI Chat</h1>
           <p className="text-xs text-muted-foreground">AI-powered emotional support</p>
         </div>
       </div>

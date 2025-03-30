@@ -53,7 +53,7 @@ const CustomChatHeader: React.FC<CustomChatHeaderProps> = ({
   return (
     <div className="p-4 border-b flex items-center justify-between">
       <div className="flex items-center space-x-2">
-        <h1 className="text-xl font-bold">Empathetic AI Chat</h1>
+        <h1 className="text-xl font-bold">SentiAI Chat</h1>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -89,7 +89,7 @@ const CustomChatHeader: React.FC<CustomChatHeaderProps> = ({
               Mood Tracker
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80">
+          <PopoverContent className="w-80 bg-background border-border">
             <HappinessMeter records={happinessRecords} />
           </PopoverContent>
         </Popover>
@@ -110,20 +110,22 @@ const CustomChatHeader: React.FC<CustomChatHeaderProps> = ({
           onOpenApiKeyModal={() => setIsApiKeyModalOpen(false)}
         />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-5 w-5" />
-              <span className="sr-only">Logout</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Logout</TooltipContent>
-        </Tooltip>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-5 w-5" />
+                <span className="sr-only">Logout</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Logout</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       
       <ApiKeyModal 
