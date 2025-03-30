@@ -2,6 +2,13 @@
 import { ChatHistory, ChatSuggestion, Message, Sentiment, SimilarMessage } from '@/types/chat';
 import { findSimilarMessages } from './vectorDB';
 
+// Define the HappinessRecord type
+export interface HappinessRecord {
+  date: string; // YYYY-MM-DD format
+  averageSentiment: number; // -1 to 1 value representing average happiness
+  sentimentCounts: Record<Sentiment, number>; // Count of each sentiment type
+}
+
 // Generate relevant suggestions based on conversation history and sentiment
 export const generateSuggestions = async (
   conversation: ChatHistory | null, 

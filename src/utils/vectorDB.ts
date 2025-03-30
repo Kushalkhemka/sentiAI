@@ -1,89 +1,76 @@
 
-import { ChromaClient } from 'chromadb';
-import { ChatHistory, Message, Sentiment, VectorDBEntry, SimilarMessage } from '@/types/chat';
+import { ChatHistory, Message, Sentiment, SimilarMessage } from '@/types/chat';
 
-// Initialize ChromaDB client (this uses an in-memory database by default)
-const chroma = new ChromaClient();
+// Fix the "global is not defined" error by creating a polyfill
+if (typeof window !== 'undefined' && typeof window.global === 'undefined') {
+  // @ts-ignore
+  window.global = window;
+}
 
-// Collection name for our embeddings
-const COLLECTION_NAME = "chat-embeddings";
-let collection: any = null;
+// Use a simpler in-memory database approach instead of ChromaDB
+let memoryVectorDB: Array<{
+  id: string;
+  content: string;
+  embedding: number[];
+  metadata: {
+    messageId: string;
+    conversationId: string;
+    timestamp: string;
+    sentiment: string;
+  };
+}> = [];
 
-// Initialize the collection
-export const initVectorDB = async () => {
+// Initialize the vector DB
+export const initVectorDB = async (): Promise<boolean> => {
   try {
-    // Try to get an existing collection, or create a new one if it doesn't exist
-    try {
-      collection = await chroma.getCollection({ name: COLLECTION_NAME });
-      console.log("Retrieved existing ChromaDB collection");
-    } catch (error) {
-      // Collection doesn't exist yet, create it
-      collection = await chroma.createCollection({ 
-        name: COLLECTION_NAME,
-        embeddingFunction: {
-          generate: generateEmbeddings,
-        }
-      });
-      console.log("Created new ChromaDB collection");
-    }
+    console.log("Initialized in-memory vector database");
     return true;
   } catch (error) {
-    console.error("Failed to initialize ChromaDB:", error);
+    console.error("Failed to initialize vector database:", error);
     return false;
   }
 };
 
-// Generate embeddings using OpenAI API
+// Generate simple embeddings (cosine similarity will be used for search)
 async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   try {
-    const OPENAI_API_URL = "https://api.openai.com/v1";
-    const OPENAI_API_KEY = "sk-your-openai-api-key"; // Replace with the actual API key
-    
-    const response = await fetch(`${OPENAI_API_URL}/embeddings`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        input: texts,
-        model: "text-embedding-ada-002"
-      })
+    // Create basic embeddings (very simplified)
+    return texts.map(text => {
+      // Create a simple embedding based on character frequencies
+      const charFreq = new Array(256).fill(0);
+      for (let i = 0; i < text.length; i++) {
+        const charCode = text.charCodeAt(i) % 256;
+        charFreq[charCode]++;
+      }
+      // Normalize the vector
+      const sum = charFreq.reduce((a, b) => a + b, 0);
+      return charFreq.map(freq => sum > 0 ? freq / sum : 0);
     });
-    
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.data.map((item: any) => item.embedding);
   } catch (error) {
     console.error("Error generating embeddings:", error);
     // Return empty embeddings as fallback
-    return texts.map(() => new Array(1536).fill(0));
+    return texts.map(() => new Array(256).fill(0));
   }
 }
 
 // Store a message in the vector database
 export const storeMessageInVectorDB = async (message: Message, conversationId: string): Promise<boolean> => {
-  if (!collection) {
-    const initialized = await initVectorDB();
-    if (!initialized) return false;
-  }
-  
   try {
     // Only store user messages
     if (message.sender !== "user") return true;
     
-    await collection.add({
-      ids: [message.id],
-      documents: [message.content],
-      metadatas: [{
+    const embedding = await generateEmbeddings([message.content]);
+    
+    memoryVectorDB.push({
+      id: message.id,
+      content: message.content,
+      embedding: embedding[0],
+      metadata: {
         messageId: message.id,
         conversationId: conversationId,
-        timestamp: message.timestamp,
+        timestamp: message.timestamp.toISOString(),
         sentiment: message.sentiment || "neutral"
-      }],
+      }
     });
     
     return true;
@@ -95,39 +82,15 @@ export const storeMessageInVectorDB = async (message: Message, conversationId: s
 
 // Store multiple messages at once
 export const storeConversationHistoryInVectorDB = async (history: ChatHistory): Promise<boolean> => {
-  if (!collection) {
-    const initialized = await initVectorDB();
-    if (!initialized) return false;
-  }
-  
   try {
     // Filter for only user messages
     const userMessages = history.messages.filter(m => m.sender === "user");
     
     if (userMessages.length === 0) return true;
     
-    const entries: VectorDBEntry[] = userMessages.map(message => ({
-      id: message.id,
-      content: message.content,
-      embedding: [], // Will be generated by ChromaDB's embedding function
-      metadata: {
-        messageId: message.id,
-        conversationId: history.id,
-        timestamp: message.timestamp,
-        sentiment: message.sentiment as Sentiment || "neutral"
-      }
-    }));
-    
-    await collection.add({
-      ids: entries.map(entry => entry.id),
-      documents: entries.map(entry => entry.content),
-      metadatas: entries.map(entry => ({
-        messageId: entry.metadata.messageId,
-        conversationId: entry.metadata.conversationId,
-        timestamp: new Date(entry.metadata.timestamp).toISOString(),
-        sentiment: entry.metadata.sentiment
-      })),
-    });
+    for (const message of userMessages) {
+      await storeMessageInVectorDB(message, history.id);
+    }
     
     return true;
   } catch (error) {
@@ -136,33 +99,50 @@ export const storeConversationHistoryInVectorDB = async (history: ChatHistory): 
   }
 };
 
-// Find similar messages to the given query
-export const findSimilarMessages = async (query: string, limit: number = 5): Promise<SimilarMessage[]> => {
-  if (!collection) {
-    const initialized = await initVectorDB();
-    if (!initialized) return [];
+// Calculate cosine similarity between two vectors
+function cosineSimilarity(vecA: number[], vecB: number[]): number {
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+  
+  for (let i = 0; i < vecA.length; i++) {
+    dotProduct += vecA[i] * vecB[i];
+    normA += vecA[i] * vecA[i];
+    normB += vecB[i] * vecB[i];
   }
   
+  normA = Math.sqrt(normA);
+  normB = Math.sqrt(normB);
+  
+  if (normA === 0 || normB === 0) {
+    return 0;
+  }
+  
+  return dotProduct / (normA * normB);
+}
+
+// Find similar messages to the given query
+export const findSimilarMessages = async (query: string, limit: number = 5): Promise<SimilarMessage[]> => {
   try {
-    const results = await collection.query({
-      queryTexts: [query],
-      nResults: limit,
-    });
-    
-    const documents = results.documents[0];
-    const metadatas = results.metadatas[0];
-    const distances = results.distances[0];
-    
-    if (!documents || !metadatas || !distances) {
+    if (memoryVectorDB.length === 0) {
       return [];
     }
     
-    return documents.map((content: string, index: number) => ({
-      messageId: metadatas[index].messageId,
-      content,
-      similarity: 1 - distances[index], // Convert distance to similarity score (0-1)
-      conversationId: metadatas[index].conversationId,
+    // Generate embedding for the query
+    const queryEmbedding = (await generateEmbeddings([query]))[0];
+    
+    // Calculate similarity with each message in the database
+    const similarities = memoryVectorDB.map(entry => ({
+      messageId: entry.metadata.messageId,
+      content: entry.content,
+      similarity: cosineSimilarity(queryEmbedding, entry.embedding),
+      conversationId: entry.metadata.conversationId
     }));
+    
+    // Sort by similarity (descending) and take the top results
+    return similarities
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, limit);
   } catch (error) {
     console.error("Error finding similar messages:", error);
     return [];

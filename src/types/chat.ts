@@ -115,7 +115,7 @@ export interface VectorDBEntry {
     messageId: string;
     conversationId: string;
     timestamp: Date;
-    sentiment: Sentiment;
+    sentiment: string;
   };
 }
 
