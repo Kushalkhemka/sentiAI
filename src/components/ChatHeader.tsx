@@ -14,7 +14,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ className }) => {
       className
     )}>
       <div className="flex items-center space-x-3">
-        <div className="h-10 w-10 rounded-full bg-soothing-gradient flex items-center justify-center text-white">
+        <div className="h-10 w-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white">
           <HeartPulse className="h-6 w-6" />
         </div>
         <div>
